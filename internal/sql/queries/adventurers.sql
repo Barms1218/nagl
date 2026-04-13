@@ -15,3 +15,7 @@ ORDER BY
 	CASE WHEN sqlc.arg(sort_by)::text = 'status' THEN role END ASC;
 
 
+-- name: UpsertAdventurer :exec
+Insert INTO adventurers(name, current_rank, role)
+VALUES($1, $2)
+RETURNING id, name, current_rank, current_activity, role;

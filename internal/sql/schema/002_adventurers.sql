@@ -5,7 +5,7 @@ CREATE TYPE activity_enum AS ENUM(
 	'available', 
 	'on_quest',
 	'traveling',
-	'sick',
+	'sick_leave',
 	'retired',
 	'dead'
 );

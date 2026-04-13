@@ -59,7 +59,7 @@ CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
 CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
 CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC;
 
--- name: UpsertContracts :batchone
+-- name: UpsertContracts :one
 INSERT INTO contracts (guild_id, title, difficulty, minimum_party_size)
 VALUES($1, $2, $3, $4)
-RETURNING id, title, difficulty, minimum_party_size, contract_statusl
+RETURNING id, title, difficulty, minimum_party_size, contract_status

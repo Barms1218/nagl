@@ -1,0 +1,11 @@
+-- +goose Up
+CREATE TABLE guild (
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	treasury INTEGER NOT NULL DEFAULT 0,
+	quests_completed INTEGER NOT NULL DEFAULT 0,
+);
+
+-- +goose Down
+DROP TABLE guild;

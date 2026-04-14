@@ -4,7 +4,6 @@ CREATE TYPE rank_enum AS ENUM('junior', 'senior');
 CREATE TYPE activity_enum AS ENUM(
 	'available', 
 	'on_quest',
-	'traveling',
 	'sick_leave',
 	'retired',
 	'dead'
@@ -13,8 +12,8 @@ CREATE TYPE activity_enum AS ENUM(
 CREATE TYPE role_enum AS ENUM(
 	'frontline',
 	'spellcaster',
-	'generalist',
-	'healer'
+	'healer',
+	'generalist'
 );
 
 CREATE TABLE adventurers (

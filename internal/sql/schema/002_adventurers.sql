@@ -25,7 +25,8 @@ CREATE TABLE adventurers (
 	current_rank rank_emum NOT NULL DEFAULT 'junior',
 	current_activity activity_enum NOT NULL DEFAULT 'available',
 	name TEXT,
-	role role_enum NOT NULL DEFAULT 'generatlist'
+	role role_enum NOT NULL DEFAULT 'generatlist',
+	upkeep_cost INTEGER NOT NULL DEFAULT 0
 );
 
 -- +goose Down

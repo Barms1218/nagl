@@ -63,3 +63,33 @@ CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END A
 INSERT INTO contracts (guild_id, title, difficulty, minimum_party_size)
 VALUES($1, $2, $3, $4)
 RETURNING id, title, difficulty, minimum_party_size, contract_status
+
+-- name : InsertContract :one
+INSERT(
+	guild_id,
+	title, 
+	difficulty,
+	minimum_party_size,
+	contract_status
+)VALUES($1, $2, $3, $4, $5)
+RETURNING id, title, difficulty, minimum_party_size, contract_status;
+
+-- name: InsertContractHistory :one
+INSERT INTO contract_history (
+guild_id,
+contract_id,
+status
+) VALUES ($1, $2, $3);
+
+-- name: GetSuccessfulContracts :many
+SELECT 
+ch.id,
+ch.guild_id,
+ch.contract_id,
+c.title,
+ch.occurred_at,
+ch.status,
+c.difficulty,
+FROM contract_history
+JOIN contracts c ON ch.contract_id = c.id
+WHERE ch.id = $1;

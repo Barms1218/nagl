@@ -10,7 +10,7 @@ FROM contracts
 ORDER BY
 CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
 CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC
+CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
 CASE WHEN sqlc.arg(sort_by)::text = 
 	'minimum_party_size' THEN minimum_party_size END ASC;
 
@@ -31,19 +31,22 @@ CASE WHEN sqlc.arg(sort_by)::text =
 	'minimum_party_size' THEN minimum_party_size END ASC;
 
 -- name: GetContractsWithStatus :many
-SELECT
-id,
-guild_id,
-title,
-difficulty,
-minimum_party_size,
-contract_status
-FROM contracts
-WHERE contract_status = $1;
-CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 
-	'minimum_party_size' THEN minimum_party_size END ASC;
+SELECT 
+ch.id AS contract_history_id,
+ch.guild_id,
+ch.contract_id,
+c.title,
+ch.occurred_at,
+ch.status,
+c.difficulty
+FROM contract_history ch
+JOIN contracts c ON ch.contract_id = c.id
+WHERE ch.status = $1
+ORDER BY
+	CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
+	CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
+	CASE WHEN sqlc.arg(sort_by)::text = 
+		'minimum_party_size' THEN minimum_party_size END ASC;
 
 -- name: GetContractsWithMinPartySize :many
 SELECT
@@ -55,41 +58,42 @@ minimum_party_size,
 contract_status
 FROM contracts
 WHERE minimum_party_size = $1
-CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC;
+ORDER BY
+	CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
+	CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
+	CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC;
 
--- name: UpsertContracts :one
-INSERT INTO contracts (guild_id, title, difficulty, minimum_party_size)
-VALUES($1, $2, $3, $4)
-RETURNING id, title, difficulty, minimum_party_size, contract_status
-
--- name : InsertContract :one
-INSERT(
+-- name: InsertContract :one
+INSERT INTO contracts (
 	guild_id,
 	title, 
 	difficulty,
-	minimum_party_size,
-	contract_status
+	description,
+	minimum_party_size
 )VALUES($1, $2, $3, $4, $5)
-RETURNING id, title, difficulty, minimum_party_size, contract_status;
+RETURNING *;
 
--- name: InsertContractHistory :one
+-- name: SetContractStatus :exec
+UPDATE contracts
+SET party_id = NULL, contract_status = $2
+WHERE id = $1;
+
+-- name: InsertContractHistory :exec
 INSERT INTO contract_history (
 guild_id,
 contract_id,
 status
 ) VALUES ($1, $2, $3);
 
--- name: GetSuccessfulContracts :many
-SELECT 
-ch.id,
-ch.guild_id,
-ch.contract_id,
-c.title,
-ch.occurred_at,
-ch.status,
-c.difficulty,
-FROM contract_history
-JOIN contracts c ON ch.contract_id = c.id
-WHERE ch.id = $1;
+-- name: GetPartyOnContract :many
+SELECT
+p.id AS party_id,
+a.id AS adventurer_id,
+a.name,
+a.current_rank,
+a.role
+FROM contracts c
+JOIN parties p ON c.id = p.contract_id
+JOIN party_members pm ON p.id = pm.party_id
+JOIN adventurers a ON pm.adventurer_id = a.id
+WHERE c.id = $1;

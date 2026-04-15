@@ -3,29 +3,9 @@ package store
 import (
 	"context"
 	"fmt"
-
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-// type ContractStore interface {
-// 	GetContracts(ctx context.Context, sortBy string) ([]database.GetContractsRow, error)
-// 	GetContractsWithDifficulty(ctx context.Context, arg database.GetContractsWithDifficultyParams) ([]database.GetContractsWithDifficultyRow, error)
-// 	GetContractsWithMinPartySize(ctx context.Context, arg database.GetContractsWithMinPartySizeParams) ([]database.GetContractsWithMinPartySizeRow, error)
-// 	GetContractsWithStatus(ctx context.Context, arg database.GetContractsWithStatusParams) ([]database.GetContractsWithStatusRow, error)
-// 	GetPartyOnContract(ctx context.Context, id uuid.UUID) ([]database.GetPartyOnContractRow, error)
-// 	InsertContract(ctx context.Context, arg database.InsertContractParams) (database.Contract, error)
-// 	InsertContractHistory(ctx context.Context, arg database.InsertContractHistoryParams) error
-// 	SetContractStatus(ctx context.Context, arg database.SetContractStatusParams) error
-// }
-//
-// func NewContractQueries(s ContractStore) *ContractQueries {
-// 	return &ContractQueries{store: s}
-// }
-//
-// type ContractQueries struct {
-// 	store ContractStore
-// }
 
 type Store struct {
 	db *pgxpool.Pool

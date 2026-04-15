@@ -1,36 +1,23 @@
--- name: GetContracts :many
+-- name: ListContracts :many
 SELECT
-id,
-guild_id,
-title,
-difficulty,
-minimum_party_size,
-contract_status
+    id,
+    guild_id,
+    title,
+    difficulty,
+    minimum_party_size,
+    contract_status
 FROM contracts
+WHERE 
+    (sqlc.narg('difficulty')::int IS NULL OR difficulty = sqlc.narg('difficulty')) AND
+    (sqlc.narg('min_party_size')::int IS NULL OR minimum_party_size >= sqlc.narg('min_party_size')) AND
+    (sqlc.narg('status')::contract_status_enum IS NULL OR contract_status = sqlc.narg('status'))
 ORDER BY
-CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 
-	'minimum_party_size' THEN minimum_party_size END ASC;
+    CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
+    CASE WHEN sqlc.arg(sort_by)::text = 'minimum_party_size' THEN minimum_party_size END ASC;
 
--- name: GetContractsWithDifficulty :many
-SELECT
-id,
-guild_id,
-title,
-difficulty,
-minimum_party_size,
-contract_status
-FROM contracts
-WHERE difficulty = $1
-ORDER BY
-CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-CASE WHEN sqlc.arg(sort_by)::text = 
-	'minimum_party_size' THEN minimum_party_size END ASC;
-
--- name: GetContractsWithStatus :many
+-- name: GetPastContractsWithStatus :many
 SELECT 
 ch.id AS contract_history_id,
 ch.guild_id,
@@ -48,30 +35,6 @@ ORDER BY
 	CASE WHEN sqlc.arg(sort_by)::text = 
 		'minimum_party_size' THEN minimum_party_size END ASC;
 
--- name: GetContractsWithMinPartySize :many
-SELECT
-id,
-guild_id,
-title,
-difficulty,
-minimum_party_size,
-contract_status
-FROM contracts
-WHERE minimum_party_size = $1
-ORDER BY
-	CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-	CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-	CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC;
-
--- name: InsertContract :one
-INSERT INTO contracts (
-	guild_id,
-	title, 
-	difficulty,
-	description,
-	minimum_party_size
-)VALUES($1, $2, $3, $4, $5)
-RETURNING *;
 
 -- name: SetContractStatus :exec
 UPDATE contracts

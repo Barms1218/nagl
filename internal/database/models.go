@@ -17,7 +17,6 @@ type ActivityEnum string
 const (
 	ActivityEnumAvailable ActivityEnum = "available"
 	ActivityEnumOnQuest   ActivityEnum = "on_quest"
-	ActivityEnumTraveling ActivityEnum = "traveling"
 	ActivityEnumSickLeave ActivityEnum = "sick_leave"
 	ActivityEnumRetired   ActivityEnum = "retired"
 	ActivityEnumDead      ActivityEnum = "dead"
@@ -149,8 +148,8 @@ type RoleEnum string
 const (
 	RoleEnumFrontline   RoleEnum = "frontline"
 	RoleEnumSpellcaster RoleEnum = "spellcaster"
-	RoleEnumGeneralist  RoleEnum = "generalist"
 	RoleEnumHealer      RoleEnum = "healer"
+	RoleEnumGeneralist  RoleEnum = "generalist"
 )
 
 func (e *RoleEnum) Scan(src interface{}) error {

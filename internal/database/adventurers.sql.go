@@ -470,7 +470,7 @@ func (q *Queries) InsertAdventurerHistory(ctx context.Context, arg InsertAdventu
 
 const setAdventurerActivity = `-- name: SetAdventurerActivity :exec
 UPDATE adventurers
-SET current_activity = $1
+SET current_activity = $1, updated_at = CURRENT_TIMESTAMP
 WHERE id = $2
 `
 
@@ -486,7 +486,7 @@ func (q *Queries) SetAdventurerActivity(ctx context.Context, arg SetAdventurerAc
 
 const setAdventurerHired = `-- name: SetAdventurerHired :exec
 UPDATE adventurers
-SET guild_id = $1
+SET guild_id = $1, updated_at = CURRENT_TIMESTAMP
 WHERE id = $2
 `
 
@@ -502,7 +502,7 @@ func (q *Queries) SetAdventurerHired(ctx context.Context, arg SetAdventurerHired
 
 const setAdventurerRank = `-- name: SetAdventurerRank :exec
 UPDATE adventurers
-SET current_rank = $1
+SET current_rank = $1, updated_at = CURRENT_TIMESTAMP
 WHERE id = $2
 `
 
@@ -519,7 +519,7 @@ func (q *Queries) SetAdventurerRank(ctx context.Context, arg SetAdventurerRankPa
 const upsertAdventurer = `-- name: UpsertAdventurer :one
 Insert INTO adventurers(name, current_rank, role, description)
 VALUES($1, $2, $3, $4)
-RETURNING id, guild_id, joined_at, recruitment_cost, current_rank, current_activity, name, description, role, upkeep_cost
+RETURNING id, guild_id, party_id, joined_at, updated_at, current_rank, current_activity, name, description, role, upkeep_cost, recruitment_cost
 `
 
 type UpsertAdventurerParams struct {
@@ -540,14 +540,16 @@ func (q *Queries) UpsertAdventurer(ctx context.Context, arg UpsertAdventurerPara
 	err := row.Scan(
 		&i.ID,
 		&i.GuildID,
+		&i.PartyID,
 		&i.JoinedAt,
-		&i.RecruitmentCost,
+		&i.UpdatedAt,
 		&i.CurrentRank,
 		&i.CurrentActivity,
 		&i.Name,
 		&i.Description,
 		&i.Role,
 		&i.UpkeepCost,
+		&i.RecruitmentCost,
 	)
 	return i, err
 }

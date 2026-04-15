@@ -2,6 +2,7 @@
 CREATE TABLE adventurer_history (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 	adventurer_id UUID NOT NULL REFERENCES adventurers(id) ON DELETE CASCADE,
+	party_id UUID REFERENCES parties(id),
 	occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	activity activity_enum NOT NULL
 );

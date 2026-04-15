@@ -17,16 +17,27 @@ CREATE TYPE role_enum AS ENUM(
 );
 
 CREATE TABLE adventurers (
+	-- Primary Key
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	guild_id UUID REFERENCES guilds(id),
-	joined_at TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	recruitment_cost INTEGER NOT NULL DEFAULT 0,
+
+	-- Foreign Keys
+	guild_id UUID REFERENCES guilds(id) ON DELETE SET NULL,
+	party_id UUID REFERENCES parties(id) ON DELETE SET NULL,
+
+	-- Audit Info
+	joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	
+	-- Personal Details
 	current_rank rank_enum NOT NULL DEFAULT 'junior',
 	current_activity activity_enum NOT NULL DEFAULT 'available',
 	name TEXT,
 	description TEXT NOT NULL,
 	role role_enum NOT NULL DEFAULT 'generalist',
-	upkeep_cost INTEGER NOT NULL DEFAULT 0
+
+	-- Financial Data
+	upkeep_cost INTEGER NOT NULL DEFAULT 0,
+	recruitment_cost INTEGER NOT NULL DEFAULT 0
 );
 
 -- +goose Down

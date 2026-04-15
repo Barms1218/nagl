@@ -123,17 +123,17 @@ RETURNING *;
 
 -- name: SetAdventurerHired :exec
 UPDATE adventurers
-SET guild_id = $1
+SET guild_id = $1, updated_at = CURRENT_TIMESTAMP
 WHERE id = $2;
 
 -- name: SetAdventurerActivity :exec
 UPDATE adventurers
-SET current_activity = $1
+SET current_activity = $1, updated_at = CURRENT_TIMESTAMP
 WHERE id = $2;
 
 -- name: SetAdventurerRank :exec
 UPDATE adventurers
-SET current_rank = $1
+SET current_rank = $1, updated_at = CURRENT_TIMESTAMP
 WHERE id = $2;
 
 -- name: InsertAdventurerHistory :exec

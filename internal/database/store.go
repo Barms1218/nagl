@@ -1,25 +1,24 @@
-package store
+package database
 
 import (
 	"context"
 	"fmt"
-	"github.com/Barms1218/nagl/internal/database"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Store struct {
 	db *pgxpool.Pool
-	*database.Queries
+	*Queries
 }
 
 func NewStore(db *pgxpool.Pool) *Store {
 	return &Store{
 		db:      db,
-		Queries: database.New(db),
+		Queries: New(db),
 	}
 }
 
-func (s *Store) ExecTX(ctx context.Context, fn func(*database.Queries) error) error {
+func (s *Store) ExecTX(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return err

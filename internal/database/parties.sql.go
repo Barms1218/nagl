@@ -15,7 +15,7 @@ import (
 const createParty = `-- name: CreateParty :one
 INSERT INTO parties (guild_id, contract_id, name)
 VALUES($1, $2, $3)
-RETURNING id, contract_id, name, guild_id, maximum_party_size, created_at
+RETURNING id, contract_id, guild_id, name, party_rank, maximum_party_size, created_at
 `
 
 type CreatePartyParams struct {
@@ -30,8 +30,9 @@ func (q *Queries) CreateParty(ctx context.Context, arg CreatePartyParams) (Party
 	err := row.Scan(
 		&i.ID,
 		&i.ContractID,
-		&i.Name,
 		&i.GuildID,
+		&i.Name,
+		&i.PartyRank,
 		&i.MaximumPartySize,
 		&i.CreatedAt,
 	)
@@ -49,8 +50,7 @@ a.role,
 a.current_activity
 FROM parties p
 JOIN contracts c ON p.contract_id = c.id
-JOIN party_members pm ON p.id = pm.party_id
-JOIN adventurers a ON pm.adventurer_id = a.id
+JOIN adventurers a ON p.id = a.party_id
 WHERE p.guild_id = $1
 `
 
@@ -97,14 +97,15 @@ SELECT
 p.id AS party_id,
 c.title,
 c.contract_status,
+p.name,
+p.party_rank,
 a.id AS adventurer_id,
 a.current_activity,
 a.name,
 a.role
 FROM parties p
 JOIN contracts c ON p.contract_id = c.id
-JOIN party_members pm ON pm.party_id = p.id
-JOIN adventurers a ON a.id = pm.adventurer_id
+JOIN adventurers a ON p.id = a.party_id
 WHERE p.id = $1
 `
 
@@ -112,9 +113,11 @@ type GetPartyDetailsRow struct {
 	PartyID         uuid.UUID          `json:"party_id"`
 	Title           pgtype.Text        `json:"title"`
 	ContractStatus  ContractStatusEnum `json:"contract_status"`
+	Name            string             `json:"name"`
+	PartyRank       int32              `json:"party_rank"`
 	AdventurerID    uuid.UUID          `json:"adventurer_id"`
 	CurrentActivity ActivityEnum       `json:"current_activity"`
-	Name            pgtype.Text        `json:"name"`
+	Name_2          pgtype.Text        `json:"name_2"`
 	Role            RoleEnum           `json:"role"`
 }
 
@@ -131,9 +134,11 @@ func (q *Queries) GetPartyDetails(ctx context.Context, id uuid.UUID) ([]GetParty
 			&i.PartyID,
 			&i.Title,
 			&i.ContractStatus,
+			&i.Name,
+			&i.PartyRank,
 			&i.AdventurerID,
 			&i.CurrentActivity,
-			&i.Name,
+			&i.Name_2,
 			&i.Role,
 		); err != nil {
 			return nil, err
@@ -144,4 +149,66 @@ func (q *Queries) GetPartyDetails(ctx context.Context, id uuid.UUID) ([]GetParty
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertMemberContractHistory = `-- name: InsertMemberContractHistory :exec
+INSERT INTO adventurer_contract_history(
+adventurer_id,
+contract_id,
+status
+)
+SELECT
+a.id,
+c.id,
+$2
+FROM adventurers a
+JOIN parties p ON a.party_id = p.id
+WHERE p.contract_id = $1
+`
+
+type InsertMemberContractHistoryParams struct {
+	ContractID uuid.UUID          `json:"contract_id"`
+	Status     ContractStatusEnum `json:"status"`
+}
+
+func (q *Queries) InsertMemberContractHistory(ctx context.Context, arg InsertMemberContractHistoryParams) error {
+	_, err := q.db.Exec(ctx, insertMemberContractHistory, arg.ContractID, arg.Status)
+	return err
+}
+
+const insertPartyHistory = `-- name: InsertPartyHistory :exec
+INSERT INTO party_history (
+	party_id,
+	contract_status
+) VALUES($1 , $2)
+`
+
+type InsertPartyHistoryParams struct {
+	PartyID        uuid.UUID          `json:"party_id"`
+	ContractStatus ContractStatusEnum `json:"contract_status"`
+}
+
+func (q *Queries) InsertPartyHistory(ctx context.Context, arg InsertPartyHistoryParams) error {
+	_, err := q.db.Exec(ctx, insertPartyHistory, arg.PartyID, arg.ContractStatus)
+	return err
+}
+
+const setMemberStatus = `-- name: SetMemberStatus :exec
+UPDATE adventurers
+SET current_activity = $1
+WHERE party_id = (
+    SELECT id 
+    FROM parties 
+    WHERE contract_id = $2
+)
+`
+
+type SetMemberStatusParams struct {
+	CurrentActivity ActivityEnum `json:"current_activity"`
+	ContractID      uuid.UUID    `json:"contract_id"`
+}
+
+func (q *Queries) SetMemberStatus(ctx context.Context, arg SetMemberStatusParams) error {
+	_, err := q.db.Exec(ctx, setMemberStatus, arg.CurrentActivity, arg.ContractID)
+	return err
 }

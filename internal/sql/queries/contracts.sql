@@ -38,8 +38,8 @@ ORDER BY
 
 -- name: SetContractStatus :exec
 UPDATE contracts
-SET party_id = NULL, contract_status = $2
-WHERE id = $1;
+SET contract_status = $2
+WHERE id = $1 AND guild_id = $3;
 
 -- name: InsertContractHistory :exec
 INSERT INTO contract_history (
@@ -48,15 +48,10 @@ contract_id,
 status
 ) VALUES ($1, $2, $3);
 
--- name: GetPartyOnContract :many
+-- name: GetPartyOnContract :one
 SELECT
-p.id AS party_id,
-a.id AS adventurer_id,
-a.name,
-a.current_rank,
-a.role
-FROM contracts c
-JOIN parties p ON c.id = p.contract_id
-JOIN party_members pm ON p.id = pm.party_id
-JOIN adventurers a ON pm.adventurer_id = a.id
-WHERE c.id = $1;
+id,
+name,
+party_rank
+FROM parties
+WHERE contract_id = $1;

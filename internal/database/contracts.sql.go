@@ -12,52 +12,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getPartyOnContract = `-- name: GetPartyOnContract :many
+const getPartyOnContract = `-- name: GetPartyOnContract :one
 SELECT
-p.id AS party_id,
-a.id AS adventurer_id,
-a.name,
-a.current_rank,
-a.role
-FROM contracts c
-JOIN parties p ON c.id = p.contract_id
-JOIN party_members pm ON p.id = pm.party_id
-JOIN adventurers a ON pm.adventurer_id = a.id
-WHERE c.id = $1
+id,
+name,
+party_rank
+FROM parties
+WHERE contract_id = $1
 `
 
 type GetPartyOnContractRow struct {
-	PartyID      uuid.UUID   `json:"party_id"`
-	AdventurerID uuid.UUID   `json:"adventurer_id"`
-	Name         pgtype.Text `json:"name"`
-	CurrentRank  RankEnum    `json:"current_rank"`
-	Role         RoleEnum    `json:"role"`
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	PartyRank int32     `json:"party_rank"`
 }
 
-func (q *Queries) GetPartyOnContract(ctx context.Context, id uuid.UUID) ([]GetPartyOnContractRow, error) {
-	rows, err := q.db.Query(ctx, getPartyOnContract, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetPartyOnContractRow
-	for rows.Next() {
-		var i GetPartyOnContractRow
-		if err := rows.Scan(
-			&i.PartyID,
-			&i.AdventurerID,
-			&i.Name,
-			&i.CurrentRank,
-			&i.Role,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetPartyOnContract(ctx context.Context, contractID uuid.UUID) (GetPartyOnContractRow, error) {
+	row := q.db.QueryRow(ctx, getPartyOnContract, contractID)
+	var i GetPartyOnContractRow
+	err := row.Scan(&i.ID, &i.Name, &i.PartyRank)
+	return i, err
 }
 
 const getPastContractsWithStatus = `-- name: GetPastContractsWithStatus :many
@@ -211,16 +185,17 @@ func (q *Queries) ListContracts(ctx context.Context, arg ListContractsParams) ([
 
 const setContractStatus = `-- name: SetContractStatus :exec
 UPDATE contracts
-SET party_id = NULL, contract_status = $2
-WHERE id = $1
+SET contract_status = $2
+WHERE id = $1 AND guild_id = $3
 `
 
 type SetContractStatusParams struct {
 	ID             uuid.UUID          `json:"id"`
 	ContractStatus ContractStatusEnum `json:"contract_status"`
+	GuildID        uuid.UUID          `json:"guild_id"`
 }
 
 func (q *Queries) SetContractStatus(ctx context.Context, arg SetContractStatusParams) error {
-	_, err := q.db.Exec(ctx, setContractStatus, arg.ID, arg.ContractStatus)
+	_, err := q.db.Exec(ctx, setContractStatus, arg.ID, arg.ContractStatus, arg.GuildID)
 	return err
 }

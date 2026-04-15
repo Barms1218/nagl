@@ -190,14 +190,16 @@ func (ns NullRoleEnum) Value() (driver.Value, error) {
 type Adventurer struct {
 	ID              uuid.UUID        `json:"id"`
 	GuildID         pgtype.UUID      `json:"guild_id"`
+	PartyID         pgtype.UUID      `json:"party_id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
-	RecruitmentCost int32            `json:"recruitment_cost"`
+	UpdatedAt       pgtype.Timestamp `json:"updated_at"`
 	CurrentRank     RankEnum         `json:"current_rank"`
 	CurrentActivity ActivityEnum     `json:"current_activity"`
 	Name            pgtype.Text      `json:"name"`
 	Description     string           `json:"description"`
 	Role            RoleEnum         `json:"role"`
 	UpkeepCost      int32            `json:"upkeep_cost"`
+	RecruitmentCost int32            `json:"recruitment_cost"`
 }
 
 type AdventurerContractHistory struct {
@@ -211,6 +213,7 @@ type AdventurerContractHistory struct {
 type AdventurerHistory struct {
 	ID           uuid.UUID        `json:"id"`
 	AdventurerID uuid.UUID        `json:"adventurer_id"`
+	PartyID      pgtype.UUID      `json:"party_id"`
 	OccurredAt   pgtype.Timestamp `json:"occurred_at"`
 	Activity     ActivityEnum     `json:"activity"`
 }
@@ -250,14 +253,16 @@ type Guild struct {
 type Party struct {
 	ID               uuid.UUID        `json:"id"`
 	ContractID       uuid.UUID        `json:"contract_id"`
-	Name             string           `json:"name"`
 	GuildID          uuid.UUID        `json:"guild_id"`
+	Name             string           `json:"name"`
+	PartyRank        int32            `json:"party_rank"`
 	MaximumPartySize int32            `json:"maximum_party_size"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 }
 
-type PartyMember struct {
-	ID           uuid.UUID `json:"id"`
-	AdventurerID uuid.UUID `json:"adventurer_id"`
-	PartyID      uuid.UUID `json:"party_id"`
+type PartyHistory struct {
+	ID             uuid.UUID          `json:"id"`
+	PartyID        uuid.UUID          `json:"party_id"`
+	OccuredAt      pgtype.Timestamp   `json:"occured_at"`
+	ContractStatus ContractStatusEnum `json:"contract_status"`
 }

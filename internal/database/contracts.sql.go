@@ -12,6 +12,74 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const assignToGuild = `-- name: AssignToGuild :exec
+UPDATE contracts
+SET guild_id = $2
+WHERE id = $1
+`
+
+type AssignToGuildParams struct {
+	ID      uuid.UUID `json:"id"`
+	GuildID uuid.UUID `json:"guild_id"`
+}
+
+func (q *Queries) AssignToGuild(ctx context.Context, arg AssignToGuildParams) error {
+	_, err := q.db.Exec(ctx, assignToGuild, arg.ID, arg.GuildID)
+	return err
+}
+
+const countPartyCompleteContracts = `-- name: CountPartyCompleteContracts :one
+SELECT COUNT(*)
+FROM party_history ph
+JOIN contracts c ON ph.contract_id = c.id
+JOIN parties p ON ph.party_id = p.id
+WHERE ph.party_id = $1 
+AND ph.contract_status = 'complete'
+AND c.difficulty >= p.party_rank
+`
+
+func (q *Queries) CountPartyCompleteContracts(ctx context.Context, partyID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countPartyCompleteContracts, partyID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getContractByID = `-- name: GetContractByID :one
+SELECT
+id,
+guild_id,
+difficulty,
+description,
+minimum_party_size,
+contract_status
+FROM contracts
+WHERE id = $1
+`
+
+type GetContractByIDRow struct {
+	ID               uuid.UUID          `json:"id"`
+	GuildID          uuid.UUID          `json:"guild_id"`
+	Difficulty       int32              `json:"difficulty"`
+	Description      pgtype.Text        `json:"description"`
+	MinimumPartySize int32              `json:"minimum_party_size"`
+	ContractStatus   ContractStatusEnum `json:"contract_status"`
+}
+
+func (q *Queries) GetContractByID(ctx context.Context, id uuid.UUID) (GetContractByIDRow, error) {
+	row := q.db.QueryRow(ctx, getContractByID, id)
+	var i GetContractByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.GuildID,
+		&i.Difficulty,
+		&i.Description,
+		&i.MinimumPartySize,
+		&i.ContractStatus,
+	)
+	return i, err
+}
+
 const getPartyOnContract = `-- name: GetPartyOnContract :one
 SELECT
 id,
@@ -100,18 +168,25 @@ const insertContractHistory = `-- name: InsertContractHistory :exec
 INSERT INTO contract_history (
 guild_id,
 contract_id,
+party_id,
 status
-) VALUES ($1, $2, $3)
+) VALUES ($1, $2, $3, $4)
 `
 
 type InsertContractHistoryParams struct {
 	GuildID    uuid.UUID          `json:"guild_id"`
 	ContractID uuid.UUID          `json:"contract_id"`
+	PartyID    uuid.UUID          `json:"party_id"`
 	Status     ContractStatusEnum `json:"status"`
 }
 
 func (q *Queries) InsertContractHistory(ctx context.Context, arg InsertContractHistoryParams) error {
-	_, err := q.db.Exec(ctx, insertContractHistory, arg.GuildID, arg.ContractID, arg.Status)
+	_, err := q.db.Exec(ctx, insertContractHistory,
+		arg.GuildID,
+		arg.ContractID,
+		arg.PartyID,
+		arg.Status,
+	)
 	return err
 }
 

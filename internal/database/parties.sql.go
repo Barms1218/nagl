@@ -12,6 +12,65 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addpartyToContract = `-- name: AddpartyToContract :exec
+Update parties
+SET contract_id = $2
+WHERE id = $1
+`
+
+type AddpartyToContractParams struct {
+	ID         uuid.UUID `json:"id"`
+	ContractID uuid.UUID `json:"contract_id"`
+}
+
+func (q *Queries) AddpartyToContract(ctx context.Context, arg AddpartyToContractParams) error {
+	_, err := q.db.Exec(ctx, addpartyToContract, arg.ID, arg.ContractID)
+	return err
+}
+
+const countMemberCompleteContracts = `-- name: CountMemberCompleteContracts :many
+SELECT ach.adventurer_id, a.name, a.current_rank, COUNT(*) AS completed_count
+FROM adventurer_contract_history ach
+JOIN adventurers a ON a.id = ach.adventurer_id
+JOIN contracts c ON ach.contract_id = c.id
+WHERE ach.contract_id = $1
+AND c.difficulty >= a.current_rank
+AND ach.status = 'complete'
+GROUP BY ach.adventurer_id, a.name
+`
+
+type CountMemberCompleteContractsRow struct {
+	AdventurerID   uuid.UUID   `json:"adventurer_id"`
+	Name           pgtype.Text `json:"name"`
+	CurrentRank    int32       `json:"current_rank"`
+	CompletedCount int64       `json:"completed_count"`
+}
+
+func (q *Queries) CountMemberCompleteContracts(ctx context.Context, contractID uuid.UUID) ([]CountMemberCompleteContractsRow, error) {
+	rows, err := q.db.Query(ctx, countMemberCompleteContracts, contractID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountMemberCompleteContractsRow
+	for rows.Next() {
+		var i CountMemberCompleteContractsRow
+		if err := rows.Scan(
+			&i.AdventurerID,
+			&i.Name,
+			&i.CurrentRank,
+			&i.CompletedCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createParty = `-- name: CreateParty :one
 INSERT INTO parties (guild_id, contract_id, name)
 VALUES($1, $2, $3)
@@ -90,6 +149,41 @@ func (q *Queries) GetAllParties(ctx context.Context, guildID uuid.UUID) ([]GetAl
 		return nil, err
 	}
 	return items, nil
+}
+
+const getParty = `-- name: GetParty :one
+SELECT
+id,
+guild_id,
+contract_id,
+party_rank,
+name,
+maximum_party_size
+FROM parties
+WHERE id = $1
+`
+
+type GetPartyRow struct {
+	ID               uuid.UUID `json:"id"`
+	GuildID          uuid.UUID `json:"guild_id"`
+	ContractID       uuid.UUID `json:"contract_id"`
+	PartyRank        int32     `json:"party_rank"`
+	Name             string    `json:"name"`
+	MaximumPartySize int32     `json:"maximum_party_size"`
+}
+
+func (q *Queries) GetParty(ctx context.Context, id uuid.UUID) (GetPartyRow, error) {
+	row := q.db.QueryRow(ctx, getParty, id)
+	var i GetPartyRow
+	err := row.Scan(
+		&i.ID,
+		&i.GuildID,
+		&i.ContractID,
+		&i.PartyRank,
+		&i.Name,
+		&i.MaximumPartySize,
+	)
+	return i, err
 }
 
 const getPartyDetails = `-- name: GetPartyDetails :many
@@ -193,6 +287,17 @@ func (q *Queries) InsertPartyHistory(ctx context.Context, arg InsertPartyHistory
 	return err
 }
 
+const removePartyFromContract = `-- name: RemovePartyFromContract :exec
+UPDATE parties
+SET contract_id = NULL
+WHERE id = $1
+`
+
+func (q *Queries) RemovePartyFromContract(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, removePartyFromContract, id)
+	return err
+}
+
 const setMemberStatus = `-- name: SetMemberStatus :exec
 UPDATE adventurers
 SET current_activity = $1
@@ -210,5 +315,21 @@ type SetMemberStatusParams struct {
 
 func (q *Queries) SetMemberStatus(ctx context.Context, arg SetMemberStatusParams) error {
 	_, err := q.db.Exec(ctx, setMemberStatus, arg.CurrentActivity, arg.ContractID)
+	return err
+}
+
+const setPartyRank = `-- name: SetPartyRank :exec
+UPDATE parties
+SET party_rank = $1
+WHERE id = $2
+`
+
+type SetPartyRankParams struct {
+	PartyRank int32     `json:"party_rank"`
+	ID        uuid.UUID `json:"id"`
+}
+
+func (q *Queries) SetPartyRank(ctx context.Context, arg SetPartyRankParams) error {
+	_, err := q.db.Exec(ctx, setPartyRank, arg.PartyRank, arg.ID)
 	return err
 }

@@ -15,11 +15,11 @@ import (
 type ActivityEnum string
 
 const (
-	ActivityEnumAvailable ActivityEnum = "available"
-	ActivityEnumOnQuest   ActivityEnum = "on_quest"
-	ActivityEnumSickLeave ActivityEnum = "sick_leave"
-	ActivityEnumRetired   ActivityEnum = "retired"
-	ActivityEnumDead      ActivityEnum = "dead"
+	ActivityEnumAvailable  ActivityEnum = "available"
+	ActivityEnumOnContract ActivityEnum = "on_contract"
+	ActivityEnumSickLeave  ActivityEnum = "sick_leave"
+	ActivityEnumRetired    ActivityEnum = "retired"
+	ActivityEnumDead       ActivityEnum = "dead"
 )
 
 func (e *ActivityEnum) Scan(src interface{}) error {
@@ -101,48 +101,6 @@ func (ns NullContractStatusEnum) Value() (driver.Value, error) {
 	return string(ns.ContractStatusEnum), nil
 }
 
-type RankEnum string
-
-const (
-	RankEnumJunior RankEnum = "junior"
-	RankEnumSenior RankEnum = "senior"
-)
-
-func (e *RankEnum) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = RankEnum(s)
-	case string:
-		*e = RankEnum(s)
-	default:
-		return fmt.Errorf("unsupported scan type for RankEnum: %T", src)
-	}
-	return nil
-}
-
-type NullRankEnum struct {
-	RankEnum RankEnum `json:"rank_enum"`
-	Valid    bool     `json:"valid"` // Valid is true if RankEnum is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullRankEnum) Scan(value interface{}) error {
-	if value == nil {
-		ns.RankEnum, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.RankEnum.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullRankEnum) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.RankEnum), nil
-}
-
 type RoleEnum string
 
 const (
@@ -193,7 +151,7 @@ type Adventurer struct {
 	PartyID         pgtype.UUID      `json:"party_id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
 	UpdatedAt       pgtype.Timestamp `json:"updated_at"`
-	CurrentRank     RankEnum         `json:"current_rank"`
+	CurrentRank     int32            `json:"current_rank"`
 	CurrentActivity ActivityEnum     `json:"current_activity"`
 	Name            pgtype.Text      `json:"name"`
 	Description     string           `json:"description"`
@@ -236,6 +194,7 @@ type ContractHistory struct {
 	GuildID    uuid.UUID          `json:"guild_id"`
 	PartyID    uuid.UUID          `json:"party_id"`
 	ContractID uuid.UUID          `json:"contract_id"`
+	Difficulty int32              `json:"difficulty"`
 	OccurredAt pgtype.Timestamp   `json:"occurred_at"`
 	Status     ContractStatusEnum `json:"status"`
 }
@@ -263,6 +222,7 @@ type Party struct {
 type PartyHistory struct {
 	ID             uuid.UUID          `json:"id"`
 	PartyID        uuid.UUID          `json:"party_id"`
+	ContractID     uuid.UUID          `json:"contract_id"`
 	OccuredAt      pgtype.Timestamp   `json:"occured_at"`
 	ContractStatus ContractStatusEnum `json:"contract_status"`
 }

@@ -1,9 +1,8 @@
 -- +goose Up
-CREATE TYPE rank_enum AS ENUM('junior', 'senior');
 
 CREATE TYPE activity_enum AS ENUM(
 	'available', 
-	'on_quest',
+	'on_contract',
 	'sick_leave',
 	'retired',
 	'dead'
@@ -29,7 +28,7 @@ CREATE TABLE adventurers (
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	
 	-- Personal Details
-	current_rank rank_enum NOT NULL DEFAULT 'junior',
+	current_rank INTEGER NOT NULL DEFAULT 1,
 	current_activity activity_enum NOT NULL DEFAULT 'available',
 	name TEXT,
 	description TEXT NOT NULL,

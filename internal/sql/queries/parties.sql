@@ -3,6 +3,17 @@ INSERT INTO parties (guild_id, contract_id, name)
 VALUES($1, $2, $3)
 RETURNING *;
 
+-- name: GetParty :one
+SELECT
+id,
+guild_id,
+contract_id,
+party_rank,
+name,
+maximum_party_size
+FROM parties
+WHERE id = $1;
+
 -- name: GetAllParties :many
 SELECT 
 p.id AS party_id,
@@ -48,6 +59,22 @@ WHERE party_id = (
     WHERE contract_id = $2
 );
 
+-- name: SetPartyRank :exec
+UPDATE parties
+SET party_rank = $1
+WHERE id = $2;
+
+-- name: CountMemberCompleteContracts :many
+SELECT ach.adventurer_id, a.name, a.current_rank, COUNT(*) AS completed_count
+FROM adventurer_contract_history ach
+JOIN adventurers a ON a.id = ach.adventurer_id
+JOIN contracts c ON ach.contract_id = c.id
+WHERE ach.contract_id = $1
+AND c.difficulty >= a.current_rank
+AND ach.status = 'complete'
+GROUP BY ach.adventurer_id, a.name;
+
+
 -- name: InsertMemberContractHistory :exec
 INSERT INTO adventurer_contract_history(
 adventurer_id,
@@ -61,3 +88,13 @@ $2
 FROM adventurers a
 JOIN parties p ON a.party_id = p.id
 WHERE p.contract_id = $1;
+
+-- name: RemovePartyFromContract :exec
+UPDATE parties
+SET contract_id = NULL
+WHERE id = $1;
+
+-- name: AddpartyToContract :exec
+Update parties
+SET contract_id = $2
+WHERE id = $1;

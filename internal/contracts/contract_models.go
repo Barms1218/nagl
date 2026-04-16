@@ -30,5 +30,11 @@ type PastContractsParams struct {
 type SetContractStatusRequest struct {
 	GuildID   uuid.UUID `json:"guild_id"`
 	ID        uuid.UUID `json:"id"`
+	PartyID   uuid.UUID `json:"party_id"`
 	NewStatus string    `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
+}
+
+type ContractClaimRequest struct {
+	ContractID uuid.UUID `json:"contract_id"`
+	GuildID    uuid.UUID `json:"guild_id"`
 }

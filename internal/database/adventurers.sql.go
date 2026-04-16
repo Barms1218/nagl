@@ -119,7 +119,7 @@ WHERE id = $1
 type GetAdventurerDetailsRow struct {
 	ID              uuid.UUID    `json:"id"`
 	Name            pgtype.Text  `json:"name"`
-	CurrentRank     RankEnum     `json:"current_rank"`
+	CurrentRank     int32        `json:"current_rank"`
 	Role            RoleEnum     `json:"role"`
 	CurrentActivity ActivityEnum `json:"current_activity"`
 	RecruitmentCost int32        `json:"recruitment_cost"`
@@ -177,7 +177,7 @@ type GetAdventurersParams struct {
 type GetAdventurersRow struct {
 	ID              uuid.UUID        `json:"id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
-	CurrentRank     RankEnum         `json:"current_rank"`
+	CurrentRank     int32            `json:"current_rank"`
 	CurrentActivity ActivityEnum     `json:"current_activity"`
 	Description     string           `json:"description"`
 	Name            pgtype.Text      `json:"name"`
@@ -227,7 +227,7 @@ WHERE guild_id = $1
 type GetAdventurersByGuildRow struct {
 	ID              uuid.UUID    `json:"id"`
 	Name            pgtype.Text  `json:"name"`
-	CurrentRank     RankEnum     `json:"current_rank"`
+	CurrentRank     int32        `json:"current_rank"`
 	Role            RoleEnum     `json:"role"`
 	Description     string       `json:"description"`
 	CurrentActivity ActivityEnum `json:"current_activity"`
@@ -286,7 +286,7 @@ type GetAdventurersWithRoleParams struct {
 type GetAdventurersWithRoleRow struct {
 	ID              uuid.UUID        `json:"id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
-	CurrentRank     RankEnum         `json:"current_rank"`
+	CurrentRank     int32            `json:"current_rank"`
 	CurrentActivity ActivityEnum     `json:"current_activity"`
 	Name            pgtype.Text      `json:"name"`
 	Description     string           `json:"description"`
@@ -347,7 +347,7 @@ type GetAdventurersWithStatusParams struct {
 type GetAdventurersWithStatusRow struct {
 	ID              uuid.UUID        `json:"id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
-	CurrentRank     RankEnum         `json:"current_rank"`
+	CurrentRank     int32            `json:"current_rank"`
 	CurrentActivity ActivityEnum     `json:"current_activity"`
 	Description     string           `json:"description"`
 	Name            pgtype.Text      `json:"name"`
@@ -403,7 +403,7 @@ type GetRecruitableAdventurersRow struct {
 	Name        pgtype.Text `json:"name"`
 	Role        RoleEnum    `json:"role"`
 	Description string      `json:"description"`
-	CurrentRank RankEnum    `json:"current_rank"`
+	CurrentRank int32       `json:"current_rank"`
 }
 
 func (q *Queries) GetRecruitableAdventurers(ctx context.Context, sortBy string) ([]GetRecruitableAdventurersRow, error) {
@@ -507,7 +507,7 @@ WHERE id = $2
 `
 
 type SetAdventurerRankParams struct {
-	CurrentRank RankEnum  `json:"current_rank"`
+	CurrentRank int32     `json:"current_rank"`
 	ID          uuid.UUID `json:"id"`
 }
 
@@ -524,7 +524,7 @@ RETURNING id, guild_id, party_id, joined_at, updated_at, current_rank, current_a
 
 type UpsertAdventurerParams struct {
 	Name        pgtype.Text `json:"name"`
-	CurrentRank RankEnum    `json:"current_rank"`
+	CurrentRank int32       `json:"current_rank"`
 	Role        RoleEnum    `json:"role"`
 	Description string      `json:"description"`
 }

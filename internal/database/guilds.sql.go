@@ -144,7 +144,7 @@ func (q *Queries) InsertGuild(ctx context.Context, arg InsertGuildParams) (Guild
 	return i, err
 }
 
-const setGuildRank = `-- name: SetGuildRank :one
+const setGuildRank = `-- name: SetGuildRank :exec
 UPDATE guilds
 SET current_rank = $2
 WHERE id = $1
@@ -156,23 +156,12 @@ type SetGuildRankParams struct {
 	CurrentRank int32     `json:"current_rank"`
 }
 
-func (q *Queries) SetGuildRank(ctx context.Context, arg SetGuildRankParams) (Guild, error) {
-	row := q.db.QueryRow(ctx, setGuildRank, arg.ID, arg.CurrentRank)
-	var i Guild
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Password,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.RecruitmentSlots,
-		&i.Treasury,
-		&i.CurrentRank,
-	)
-	return i, err
+func (q *Queries) SetGuildRank(ctx context.Context, arg SetGuildRankParams) error {
+	_, err := q.db.Exec(ctx, setGuildRank, arg.ID, arg.CurrentRank)
+	return err
 }
 
-const setRecruitmentSlots = `-- name: SetRecruitmentSlots :one
+const setRecruitmentSlots = `-- name: SetRecruitmentSlots :exec
 UPDATE guilds
 SET recruitment_slots = $2
 WHERE id = $1
@@ -184,23 +173,12 @@ type SetRecruitmentSlotsParams struct {
 	RecruitmentSlots int32     `json:"recruitment_slots"`
 }
 
-func (q *Queries) SetRecruitmentSlots(ctx context.Context, arg SetRecruitmentSlotsParams) (Guild, error) {
-	row := q.db.QueryRow(ctx, setRecruitmentSlots, arg.ID, arg.RecruitmentSlots)
-	var i Guild
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Password,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.RecruitmentSlots,
-		&i.Treasury,
-		&i.CurrentRank,
-	)
-	return i, err
+func (q *Queries) SetRecruitmentSlots(ctx context.Context, arg SetRecruitmentSlotsParams) error {
+	_, err := q.db.Exec(ctx, setRecruitmentSlots, arg.ID, arg.RecruitmentSlots)
+	return err
 }
 
-const updateTreasury = `-- name: UpdateTreasury :one
+const updateTreasury = `-- name: UpdateTreasury :exec
 UPDATE guilds
 SET treasury = treasury + $2
 WHERE id = $1
@@ -212,18 +190,7 @@ type UpdateTreasuryParams struct {
 	Treasury int32     `json:"treasury"`
 }
 
-func (q *Queries) UpdateTreasury(ctx context.Context, arg UpdateTreasuryParams) (Guild, error) {
-	row := q.db.QueryRow(ctx, updateTreasury, arg.ID, arg.Treasury)
-	var i Guild
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Password,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.RecruitmentSlots,
-		&i.Treasury,
-		&i.CurrentRank,
-	)
-	return i, err
+func (q *Queries) UpdateTreasury(ctx context.Context, arg UpdateTreasuryParams) error {
+	_, err := q.db.Exec(ctx, updateTreasury, arg.ID, arg.Treasury)
+	return err
 }

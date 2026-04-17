@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"net/http"
 	"strings"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type contextKey string
@@ -55,7 +55,11 @@ func JWTMiddleware(secret *ecdsa.PublicKey) func(http.Handler) http.Handler {
 	}
 }
 
-func GuildIDFromContext(ctx context.Context) (string, bool) {
-	guildID, ok := ctx.Value(guildIDKey).(string)
+func GuildIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	idStr, ok := ctx.Value(guildIDKey).(string)
+	guildID, err := uuid.Parse(idStr)
+	if err != nil {
+		return uuid.UUID{}, false
+	}
 	return guildID, ok
 }

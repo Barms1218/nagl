@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Barms1218/nagl/internal/auth"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -81,5 +82,25 @@ func ChangeTreasuryAmount(s *GuildService) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
+		guildID, ok := auth.GuildIDFromContext(ctx)
+		if !ok {
+			http.Error(w, "Missing Guild ID Claim", http.StatusUnauthorized)
+			return
+		}
+
+		params := UpdateTreasuryRequest{
+			GuildID: guildID,
+		}
+		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+			http.Error(w, "JSON Decoding error: %w", http.StatusInternalServerError)
+			return
+		}
+
+		if err := s.ChangeTreasuryAmount(ctx, params); err != nil {
+			http.Error(w, "Failed to update Treasury: %w", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }

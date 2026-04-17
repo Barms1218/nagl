@@ -7,14 +7,15 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
-	"strings"
-	"time"
-	"unicode"
 )
 
 const (
@@ -79,11 +80,6 @@ func (s *GuildService) EnterGuild(ctx context.Context, g GuildAuthRequest) (uuid
 	if err != nil || !match {
 		return uuid.UUID{}, fmt.Errorf("Invalid credentials")
 	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"guildID": guild.ID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-	})
 
 	return guild.ID, nil
 }
@@ -154,4 +150,12 @@ func (s *GuildService) StrongPassword(fl validator.FieldLevel) bool {
 		}
 	}
 	return hasUpper && hasLower && hasNumber && hasSpecial
+}
+
+func (s *GuildService) ChangeTreasuryAmount(ctx context.Context, request UpdateTreasuryRequest) error {
+	params := database.UpdateTreasuryParams{
+		ID:       request.GuildID,
+		Treasury: request.Amount,
+	}
+	return s.store.UpdateTreasury(ctx, params)
 }

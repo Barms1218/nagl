@@ -18,6 +18,8 @@ func Routes(service *GuildService, secret *ecdsa.PrivateKey) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.JWTMiddleware(&secret.PublicKey))
 
+		r.Patch("/treasury", ChangeTreasuryAmount(service))
+
 	})
 
 	return r

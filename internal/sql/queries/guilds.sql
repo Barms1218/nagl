@@ -43,19 +43,19 @@ SELECT current_rank
 FROM guilds
 WHERE id = $1;
 
--- name: UpdateTreasury :one
+-- name: UpdateTreasury :exec
 UPDATE guilds
 SET treasury = treasury + $2
 WHERE id = $1
 RETURNING *;
 
--- name: SetGuildRank :one
+-- name: SetGuildRank :exec
 UPDATE guilds
 SET current_rank = $2
 WHERE id = $1
 RETURNING *;
 
--- name: SetRecruitmentSlots :one
+-- name: SetRecruitmentSlots :exec
 UPDATE guilds
 SET recruitment_slots = $2
 WHERE id = $1

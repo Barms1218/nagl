@@ -75,3 +75,11 @@ func Login(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
 		})
 	}
 }
+
+func ChangeTreasuryAmount(s *GuildService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+	}
+}

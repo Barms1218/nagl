@@ -8,12 +8,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/argon2"
 )
@@ -46,10 +44,10 @@ func (s *GuildService) GetGuildByID(ctx context.Context, id uuid.UUID) (database
 	return s.store.GetGuildByID(ctx, id)
 }
 
-func (s *GuildService) RegisterGuild(ctx context.Context, g GuildAuthRequest) (*jwt.Token, error) {
+func (s *GuildService) RegisterGuild(ctx context.Context, g GuildAuthRequest) (uuid.UUID, error) {
 	hashedPassword, err := s.HashPassword(g.GuildKey)
 	if err != nil {
-		return nil, err
+		return uuid.UUID{}, err
 	}
 	params := database.InsertGuildParams{
 		Name:     g.GuildName,
@@ -58,15 +56,10 @@ func (s *GuildService) RegisterGuild(ctx context.Context, g GuildAuthRequest) (*
 
 	guild, err := s.store.InsertGuild(ctx, params)
 	if err != nil {
-		return nil, fmt.Errorf("Error occurred during guild registration: %w", err)
+		return uuid.UUID{}, fmt.Errorf("Error occurred during guild registration: %w", err)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
-		"guildID": guild.ID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	return token, nil
+	return guild.ID, nil
 
 }
 

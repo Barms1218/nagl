@@ -146,9 +146,9 @@ func (ns NullRoleEnum) Value() (driver.Value, error) {
 }
 
 type Adventurer struct {
-	ID              uuid.UUID        `json:"id"`
-	GuildID         pgtype.UUID      `json:"guild_id"`
-	PartyID         pgtype.UUID      `json:"party_id"`
+	ID              pgtype.UUID      `json:"id"`
+	GuildID         uuid.UUID        `json:"guild_id"`
+	PartyID         uuid.UUID        `json:"party_id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
 	UpdatedAt       pgtype.Timestamp `json:"updated_at"`
 	CurrentRank     int32            `json:"current_rank"`
@@ -161,24 +161,24 @@ type Adventurer struct {
 }
 
 type AdventurerContractHistory struct {
-	ID           uuid.UUID          `json:"id"`
-	AdventurerID uuid.UUID          `json:"adventurer_id"`
-	ContractID   uuid.UUID          `json:"contract_id"`
+	ID           pgtype.UUID        `json:"id"`
+	AdventurerID pgtype.UUID        `json:"adventurer_id"`
+	ContractID   pgtype.UUID        `json:"contract_id"`
 	Status       ContractStatusEnum `json:"status"`
 	OccurredAt   pgtype.Timestamp   `json:"occurred_at"`
 }
 
 type AdventurerHistory struct {
-	ID           uuid.UUID        `json:"id"`
-	AdventurerID uuid.UUID        `json:"adventurer_id"`
-	PartyID      pgtype.UUID      `json:"party_id"`
+	ID           pgtype.UUID      `json:"id"`
+	AdventurerID pgtype.UUID      `json:"adventurer_id"`
+	PartyID      uuid.UUID        `json:"party_id"`
 	OccurredAt   pgtype.Timestamp `json:"occurred_at"`
 	Activity     ActivityEnum     `json:"activity"`
 }
 
 type Contract struct {
-	ID               uuid.UUID          `json:"id"`
-	GuildID          uuid.UUID          `json:"guild_id"`
+	ID               pgtype.UUID        `json:"id"`
+	GuildID          pgtype.UUID        `json:"guild_id"`
 	Title            pgtype.Text        `json:"title"`
 	Difficulty       int32              `json:"difficulty"`
 	MinimumPartySize int32              `json:"minimum_party_size"`
@@ -190,17 +190,17 @@ type Contract struct {
 }
 
 type ContractHistory struct {
-	ID         uuid.UUID          `json:"id"`
-	GuildID    uuid.UUID          `json:"guild_id"`
-	PartyID    uuid.UUID          `json:"party_id"`
-	ContractID uuid.UUID          `json:"contract_id"`
+	ID         pgtype.UUID        `json:"id"`
+	GuildID    pgtype.UUID        `json:"guild_id"`
+	PartyID    pgtype.UUID        `json:"party_id"`
+	ContractID pgtype.UUID        `json:"contract_id"`
 	Difficulty int32              `json:"difficulty"`
 	OccurredAt pgtype.Timestamp   `json:"occurred_at"`
 	Status     ContractStatusEnum `json:"status"`
 }
 
 type Guild struct {
-	ID               uuid.UUID        `json:"id"`
+	ID               pgtype.UUID      `json:"id"`
 	Name             string           `json:"name"`
 	Password         string           `json:"password"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
@@ -211,9 +211,9 @@ type Guild struct {
 }
 
 type Party struct {
-	ID               uuid.UUID        `json:"id"`
+	ID               pgtype.UUID      `json:"id"`
 	ContractID       uuid.UUID        `json:"contract_id"`
-	GuildID          uuid.UUID        `json:"guild_id"`
+	GuildID          pgtype.UUID      `json:"guild_id"`
 	Name             string           `json:"name"`
 	PartyRank        int32            `json:"party_rank"`
 	MaximumPartySize int32            `json:"maximum_party_size"`
@@ -221,9 +221,9 @@ type Party struct {
 }
 
 type PartyHistory struct {
-	ID             uuid.UUID          `json:"id"`
-	PartyID        uuid.UUID          `json:"party_id"`
-	ContractID     uuid.UUID          `json:"contract_id"`
-	OccuredAt      pgtype.Timestamp   `json:"occured_at"`
+	ID             pgtype.UUID        `json:"id"`
+	PartyID        pgtype.UUID        `json:"party_id"`
+	ContractID     pgtype.UUID        `json:"contract_id"`
+	OccurredAt     pgtype.Timestamp   `json:"occurred_at"`
 	ContractStatus ContractStatusEnum `json:"contract_status"`
 }

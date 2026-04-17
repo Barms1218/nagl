@@ -30,7 +30,7 @@ func (s *ProceduralService) GenerateAdventurer(ctx context.Context) (GeneratedCo
 		Model: anthropic.ModelClaudeOpus4_6,
 	})
 	if err != nil {
-		panic(err.Error())
+		return GeneratedContract{}, err
 	}
 	fmt.Printf("%+v\n", message.Content)
 

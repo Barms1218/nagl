@@ -57,8 +57,9 @@ INSERT INTO contract_history (
 guild_id,
 contract_id,
 party_id,
+difficulty,
 status
-) VALUES ($1, $2, $3, $4);
+) VALUES ($1, $2, $3, $4, $5);
 
 -- name: GetPartyOnContract :one
 SELECT

@@ -3,6 +3,7 @@ package app
 import (
 	"crypto/ecdsa"
 
+	"github.com/Barms1218/nagl/internal/adventurers"
 	"github.com/Barms1218/nagl/internal/auth"
 	"github.com/Barms1218/nagl/internal/contracts"
 	"github.com/Barms1218/nagl/internal/guild"
@@ -15,6 +16,7 @@ type App struct {
 	guildService      *guild.GuildService
 	proceduralService *procedural.ProceduralService
 	contractService   *contracts.ContractService
+	adventurerService *adventurers.AdventurerService
 	privateKey        *ecdsa.PrivateKey
 }
 
@@ -22,11 +24,13 @@ func NewApp(
 	gs *guild.GuildService,
 	ps *procedural.ProceduralService,
 	cs *contracts.ContractService,
+	as *adventurers.AdventurerService,
 	pk *ecdsa.PrivateKey) *App {
 	return &App{
 		guildService:      gs,
 		proceduralService: ps,
 		contractService:   cs,
+		adventurerService: as,
 		privateKey:        pk,
 	}
 }
@@ -41,6 +45,7 @@ func (a *App) Routes() chi.Router {
 		r.Use(auth.JWTMiddleware(&a.privateKey.PublicKey))
 		r.Mount("/contracts", contracts.Routes(a.contractService))
 		r.Mount("/generate", procedural.Routes(a.proceduralService))
+		r.Mount("adventurers", adventurers.Routes(a.adventurerService))
 	})
 
 	return r

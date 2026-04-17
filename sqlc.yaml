@@ -12,4 +12,7 @@ sql:
         emit_prepared_queries: false    
         overrides:
           - db_type: "uuid"
-            go_type: "github.com/google/uuid.UUID"
+            nullable: true
+            go_type: 
+              import: "github.com/google/uuid"
+              type: "UUID"

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Barms1218/nagl/internal/adventurers"
 	"github.com/Barms1218/nagl/internal/app"
 
 	"log"
@@ -44,8 +45,9 @@ func main() {
 	g := guild.NewGuildService(store, v, privateKey)
 	c := contracts.NewContractService(store)
 	p := procedural.NewProceduralService(&client, store)
+	a := adventurers.NewAdventurerService(store)
 
-	app := app.NewApp(g, p, c, privateKey)
+	app := app.NewApp(g, p, c, a, privateKey)
 
 	r := app.Routes()
 

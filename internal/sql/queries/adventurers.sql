@@ -27,22 +27,20 @@ WHERE guild_id = $1;
 
 -- name: GetAdventurerDetails :one
 SELECT
-id,
+party_id,
 name,
 current_rank,
 role,
 current_activity,
-recruitment_cost
+upkeep_cost
 FROM adventurers
 WHERE id = $1;
 
--- name: GetAdventurers :many
+-- name: GetGuildMembers :many
 SELECT 
 id,
-joined_at,
 current_rank,
 current_activity,
-description,
 name,
 role
 FROM adventurers
@@ -110,7 +108,7 @@ JOIN contracts c ON ach.contract_id = c.id
 WHERE a.id = $1
 ORDER BY ach.occurred_at DESC;
 
--- name: GetAdventurerUpkeepCost :exec
+-- name: GetAdventurerUpkeepCost :one
 SELECT
 upkeep_cost
 FROM adventurers

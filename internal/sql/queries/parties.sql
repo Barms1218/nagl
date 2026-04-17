@@ -47,8 +47,9 @@ WHERE p.id = $1;
 -- name: InsertPartyHistory :exec
 INSERT INTO party_history (
 	party_id,
+    contract_id,
 	contract_status
-) VALUES($1 , $2);
+) VALUES($1 , $2, $3);
 
 -- name: SetMemberStatus :exec
 UPDATE adventurers

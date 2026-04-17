@@ -11,7 +11,7 @@ RETURNING *;
 SELECT
 id,
 current_rank,
-treasury
+treasury,
 recruitment_slots,
 current_rank
 FROM guilds
@@ -21,7 +21,7 @@ WHERE id =$1;
 SELECT 
 id,
 current_rank,
-treasury
+treasury,
 recruitment_slots,
 current_rank,
 password

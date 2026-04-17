@@ -58,6 +58,10 @@ func Login(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
 		}
 
 		id, err := s.EnterGuild(ctx, loginRequest)
+		if err != nil {
+			http.Error(w, "Login Failed", http.StatusInternalServerError)
+			return
+		}
 		token := jwt.NewWithClaims(jwt.SigningMethodES256, jwt.MapClaims{
 			"guildID": id,
 			"exp":     time.Now().Add(time.Hour * 24).Unix(),

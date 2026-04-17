@@ -3,10 +3,11 @@ package contracts
 import (
 	"context"
 	"fmt"
+	"math"
+
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"math"
 )
 
 type ContractService struct {
@@ -197,7 +198,7 @@ func (s *ContractService) HandlePartyProgression(
 		if member.CompletedCount > 0 && member.CompletedCount%5 == 0 && member.CurrentRank < 5 {
 			if err := q.SetAdventurerRank(ctx, database.SetAdventurerRankParams{
 				CurrentRank: int32(math.Round(float64(member.CompletedCount) / 5.0)),
-				ID:          member.AdventurerID,
+				ID:          database.UUIDToPgtype(member.AdventurerID),
 			}); err != nil {
 				return fmt.Errorf("Error occurred during party member ranking: %w", err)
 			}

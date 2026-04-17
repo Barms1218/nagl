@@ -27,7 +27,7 @@ func JWTMiddleware(secret *ecdsa.PublicKey) func(http.Handler) http.Handler {
 			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 			token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
-				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				if _, ok := t.Method.(*jwt.SigningMethodECDSA); !ok {
 					return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 				}
 				return secret, nil

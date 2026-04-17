@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE parties (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	contract_id UUID NOT NULL REFERENCES contracts(id) ON DELETE SET NULL,
+	contract_id UUID REFERENCES contracts(id) ON DELETE SET NULL,
 	guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
 	name TEXT UNIQUE NOT NULL,
 	party_rank INTEGER NOT NULL DEFAULT 1,

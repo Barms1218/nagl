@@ -25,13 +25,13 @@ ORDER BY ah.occurred_at DESC
 `
 
 type GetAdventurerActivitiesRow struct {
-	ID         uuid.UUID        `json:"id"`
+	ID         pgtype.UUID      `json:"id"`
 	OccurredAt pgtype.Timestamp `json:"occurred_at"`
 	Activity   ActivityEnum     `json:"activity"`
 	Name       pgtype.Text      `json:"name"`
 }
 
-func (q *Queries) GetAdventurerActivities(ctx context.Context, id uuid.UUID) ([]GetAdventurerActivitiesRow, error) {
+func (q *Queries) GetAdventurerActivities(ctx context.Context, id pgtype.UUID) ([]GetAdventurerActivitiesRow, error) {
 	rows, err := q.db.Query(ctx, getAdventurerActivities, id)
 	if err != nil {
 		return nil, err
@@ -71,14 +71,14 @@ ORDER BY ach.occurred_at DESC
 `
 
 type GetAdventurerContractHistoryRow struct {
-	AdventurerID   uuid.UUID          `json:"adventurer_id"`
+	AdventurerID   pgtype.UUID        `json:"adventurer_id"`
 	Name           pgtype.Text        `json:"name"`
-	ContractID     uuid.UUID          `json:"contract_id"`
+	ContractID     pgtype.UUID        `json:"contract_id"`
 	Title          pgtype.Text        `json:"title"`
 	ContractStatus ContractStatusEnum `json:"contract_status"`
 }
 
-func (q *Queries) GetAdventurerContractHistory(ctx context.Context, id uuid.UUID) ([]GetAdventurerContractHistoryRow, error) {
+func (q *Queries) GetAdventurerContractHistory(ctx context.Context, id pgtype.UUID) ([]GetAdventurerContractHistoryRow, error) {
 	rows, err := q.db.Query(ctx, getAdventurerContractHistory, id)
 	if err != nil {
 		return nil, err
@@ -106,110 +106,51 @@ func (q *Queries) GetAdventurerContractHistory(ctx context.Context, id uuid.UUID
 
 const getAdventurerDetails = `-- name: GetAdventurerDetails :one
 SELECT
-id,
+party_id,
 name,
 current_rank,
 role,
 current_activity,
-recruitment_cost
+upkeep_cost
 FROM adventurers
 WHERE id = $1
 `
 
 type GetAdventurerDetailsRow struct {
-	ID              uuid.UUID    `json:"id"`
+	PartyID         uuid.UUID    `json:"party_id"`
 	Name            pgtype.Text  `json:"name"`
 	CurrentRank     int32        `json:"current_rank"`
 	Role            RoleEnum     `json:"role"`
 	CurrentActivity ActivityEnum `json:"current_activity"`
-	RecruitmentCost int32        `json:"recruitment_cost"`
+	UpkeepCost      int32        `json:"upkeep_cost"`
 }
 
-func (q *Queries) GetAdventurerDetails(ctx context.Context, id uuid.UUID) (GetAdventurerDetailsRow, error) {
+func (q *Queries) GetAdventurerDetails(ctx context.Context, id pgtype.UUID) (GetAdventurerDetailsRow, error) {
 	row := q.db.QueryRow(ctx, getAdventurerDetails, id)
 	var i GetAdventurerDetailsRow
 	err := row.Scan(
-		&i.ID,
+		&i.PartyID,
 		&i.Name,
 		&i.CurrentRank,
 		&i.Role,
 		&i.CurrentActivity,
-		&i.RecruitmentCost,
+		&i.UpkeepCost,
 	)
 	return i, err
 }
 
-const getAdventurerUpkeepCost = `-- name: GetAdventurerUpkeepCost :exec
+const getAdventurerUpkeepCost = `-- name: GetAdventurerUpkeepCost :one
 SELECT
 upkeep_cost
 FROM adventurers
 WHERE id = $1
 `
 
-func (q *Queries) GetAdventurerUpkeepCost(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, getAdventurerUpkeepCost, id)
-	return err
-}
-
-const getAdventurers = `-- name: GetAdventurers :many
-SELECT 
-id,
-joined_at,
-current_rank,
-current_activity,
-description,
-name,
-role
-FROM adventurers
-WHERE guild_id = $1
-ORDER BY
-	CASE WHEN $2::text = 'joined_at' THEN joined_at END ASC,
-	CASE WHEN $2::text = 'name' THEN name END ASC,
-	CASE WHEN $2::text = 'role' THEN role END ASC,
-	CASE WHEN $2::text = 'activity' THEN current_activity END ASC
-`
-
-type GetAdventurersParams struct {
-	GuildID pgtype.UUID `json:"guild_id"`
-	SortBy  string      `json:"sort_by"`
-}
-
-type GetAdventurersRow struct {
-	ID              uuid.UUID        `json:"id"`
-	JoinedAt        pgtype.Timestamp `json:"joined_at"`
-	CurrentRank     int32            `json:"current_rank"`
-	CurrentActivity ActivityEnum     `json:"current_activity"`
-	Description     string           `json:"description"`
-	Name            pgtype.Text      `json:"name"`
-	Role            RoleEnum         `json:"role"`
-}
-
-func (q *Queries) GetAdventurers(ctx context.Context, arg GetAdventurersParams) ([]GetAdventurersRow, error) {
-	rows, err := q.db.Query(ctx, getAdventurers, arg.GuildID, arg.SortBy)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetAdventurersRow
-	for rows.Next() {
-		var i GetAdventurersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.JoinedAt,
-			&i.CurrentRank,
-			&i.CurrentActivity,
-			&i.Description,
-			&i.Name,
-			&i.Role,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetAdventurerUpkeepCost(ctx context.Context, id pgtype.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, getAdventurerUpkeepCost, id)
+	var upkeep_cost int32
+	err := row.Scan(&upkeep_cost)
+	return upkeep_cost, err
 }
 
 const getAdventurersByGuild = `-- name: GetAdventurersByGuild :many
@@ -225,7 +166,7 @@ WHERE guild_id = $1
 `
 
 type GetAdventurersByGuildRow struct {
-	ID              uuid.UUID    `json:"id"`
+	ID              pgtype.UUID  `json:"id"`
 	Name            pgtype.Text  `json:"name"`
 	CurrentRank     int32        `json:"current_rank"`
 	Role            RoleEnum     `json:"role"`
@@ -233,7 +174,7 @@ type GetAdventurersByGuildRow struct {
 	CurrentActivity ActivityEnum `json:"current_activity"`
 }
 
-func (q *Queries) GetAdventurersByGuild(ctx context.Context, guildID pgtype.UUID) ([]GetAdventurersByGuildRow, error) {
+func (q *Queries) GetAdventurersByGuild(ctx context.Context, guildID uuid.UUID) ([]GetAdventurersByGuildRow, error) {
 	rows, err := q.db.Query(ctx, getAdventurersByGuild, guildID)
 	if err != nil {
 		return nil, err
@@ -278,13 +219,13 @@ ORDER BY
 `
 
 type GetAdventurersWithRoleParams struct {
-	GuildID pgtype.UUID `json:"guild_id"`
-	Role    RoleEnum    `json:"role"`
-	SortBy  string      `json:"sort_by"`
+	GuildID uuid.UUID `json:"guild_id"`
+	Role    RoleEnum  `json:"role"`
+	SortBy  string    `json:"sort_by"`
 }
 
 type GetAdventurersWithRoleRow struct {
-	ID              uuid.UUID        `json:"id"`
+	ID              pgtype.UUID      `json:"id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
 	CurrentRank     int32            `json:"current_rank"`
 	CurrentActivity ActivityEnum     `json:"current_activity"`
@@ -339,13 +280,13 @@ ORDER BY
 `
 
 type GetAdventurersWithStatusParams struct {
-	GuildID         pgtype.UUID  `json:"guild_id"`
+	GuildID         uuid.UUID    `json:"guild_id"`
 	CurrentActivity ActivityEnum `json:"current_activity"`
 	SortBy          string       `json:"sort_by"`
 }
 
 type GetAdventurersWithStatusRow struct {
-	ID              uuid.UUID        `json:"id"`
+	ID              pgtype.UUID      `json:"id"`
 	JoinedAt        pgtype.Timestamp `json:"joined_at"`
 	CurrentRank     int32            `json:"current_rank"`
 	CurrentActivity ActivityEnum     `json:"current_activity"`
@@ -382,6 +323,61 @@ func (q *Queries) GetAdventurersWithStatus(ctx context.Context, arg GetAdventure
 	return items, nil
 }
 
+const getGuildMembers = `-- name: GetGuildMembers :many
+SELECT 
+id,
+current_rank,
+current_activity,
+name,
+role
+FROM adventurers
+WHERE guild_id = $1
+ORDER BY
+	CASE WHEN $2::text = 'joined_at' THEN joined_at END ASC,
+	CASE WHEN $2::text = 'name' THEN name END ASC,
+	CASE WHEN $2::text = 'role' THEN role END ASC,
+	CASE WHEN $2::text = 'activity' THEN current_activity END ASC
+`
+
+type GetGuildMembersParams struct {
+	GuildID uuid.UUID `json:"guild_id"`
+	SortBy  string    `json:"sort_by"`
+}
+
+type GetGuildMembersRow struct {
+	ID              pgtype.UUID  `json:"id"`
+	CurrentRank     int32        `json:"current_rank"`
+	CurrentActivity ActivityEnum `json:"current_activity"`
+	Name            pgtype.Text  `json:"name"`
+	Role            RoleEnum     `json:"role"`
+}
+
+func (q *Queries) GetGuildMembers(ctx context.Context, arg GetGuildMembersParams) ([]GetGuildMembersRow, error) {
+	rows, err := q.db.Query(ctx, getGuildMembers, arg.GuildID, arg.SortBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetGuildMembersRow
+	for rows.Next() {
+		var i GetGuildMembersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CurrentRank,
+			&i.CurrentActivity,
+			&i.Name,
+			&i.Role,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRecruitableAdventurers = `-- name: GetRecruitableAdventurers :many
 SELECT 
 id,
@@ -399,7 +395,7 @@ ORDER BY
 `
 
 type GetRecruitableAdventurersRow struct {
-	ID          uuid.UUID   `json:"id"`
+	ID          pgtype.UUID `json:"id"`
 	Name        pgtype.Text `json:"name"`
 	Role        RoleEnum    `json:"role"`
 	Description string      `json:"description"`
@@ -441,8 +437,8 @@ INSERT INTO adventurer_contract_history(
 `
 
 type InsertAdventurerContractHistoryParams struct {
-	AdventurerID uuid.UUID          `json:"adventurer_id"`
-	ContractID   uuid.UUID          `json:"contract_id"`
+	AdventurerID pgtype.UUID        `json:"adventurer_id"`
+	ContractID   pgtype.UUID        `json:"contract_id"`
 	Status       ContractStatusEnum `json:"status"`
 }
 
@@ -459,7 +455,7 @@ activity
 `
 
 type InsertAdventurerHistoryParams struct {
-	AdventurerID uuid.UUID    `json:"adventurer_id"`
+	AdventurerID pgtype.UUID  `json:"adventurer_id"`
 	Activity     ActivityEnum `json:"activity"`
 }
 
@@ -476,7 +472,7 @@ WHERE id = $2
 
 type SetAdventurerActivityParams struct {
 	CurrentActivity ActivityEnum `json:"current_activity"`
-	ID              uuid.UUID    `json:"id"`
+	ID              pgtype.UUID  `json:"id"`
 }
 
 func (q *Queries) SetAdventurerActivity(ctx context.Context, arg SetAdventurerActivityParams) error {
@@ -491,8 +487,8 @@ WHERE id = $2
 `
 
 type SetAdventurerHiredParams struct {
-	GuildID pgtype.UUID `json:"guild_id"`
-	ID      uuid.UUID   `json:"id"`
+	GuildID uuid.UUID   `json:"guild_id"`
+	ID      pgtype.UUID `json:"id"`
 }
 
 func (q *Queries) SetAdventurerHired(ctx context.Context, arg SetAdventurerHiredParams) error {
@@ -507,8 +503,8 @@ WHERE id = $2
 `
 
 type SetAdventurerRankParams struct {
-	CurrentRank int32     `json:"current_rank"`
-	ID          uuid.UUID `json:"id"`
+	CurrentRank int32       `json:"current_rank"`
+	ID          pgtype.UUID `json:"id"`
 }
 
 func (q *Queries) SetAdventurerRank(ctx context.Context, arg SetAdventurerRankParams) error {

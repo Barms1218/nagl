@@ -1,18 +1,32 @@
 -- name: InsertGuild :one
 INSERT INTO guilds (
-	name 
-) values($1) 
+	name,
+	password
+) values($1, $2) 
 ON CONFLICT DO UPDATE
-SET name = excluded.name
+SET password = excluded.password
 RETURNING *;
 
--- name: GetGuild :one
+-- name: GetGuildByID :one
 SELECT
 id,
 current_rank,
 treasury
+recruitment_slots,
+current_rank
 FROM guilds
 WHERE id =$1;
+
+-- name: GetGuildByName :one
+SELECT 
+id,
+current_rank,
+treasury
+recruitment_slots,
+current_rank,
+password
+FROM guilds
+WHERE name = $1;
 
 -- name: GetGuildTreasury :one
 SELECT treasury

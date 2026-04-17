@@ -3,18 +3,25 @@ package procedural
 import (
 	"context"
 	"fmt"
+	"github.com/Barms1218/nagl/internal/database"
+
 	"github.com/anthropics/anthropic-sdk-go" // imported as anthropic
 )
 
 type ProceduralService struct {
 	client *anthropic.Client
+	store  *database.Store
 }
 
-func NewProceduralService(c *anthropic.Client) *ProceduralService {
-	return &ProceduralService{client: c}
+func NewProceduralService(c *anthropic.Client, s *database.Store) *ProceduralService {
+	return &ProceduralService{
+		client: c,
+		store:  s,
+	}
 }
 
-func (s *ProceduralService) GenerateAdventurer(ctx context.Context) error {
+func (s *ProceduralService) GenerateAdventurer(ctx context.Context) (GeneratedContract, error) {
+	// guild := s.store.GetGuild(ctx, guildID)
 	message, err := s.client.Messages.New(context.TODO(), anthropic.MessageNewParams{
 		MaxTokens: 1024,
 		Messages: []anthropic.MessageParam{
@@ -27,5 +34,5 @@ func (s *ProceduralService) GenerateAdventurer(ctx context.Context) error {
 	}
 	fmt.Printf("%+v\n", message.Content)
 
-	return nil
+	return GeneratedContract{}, nil
 }

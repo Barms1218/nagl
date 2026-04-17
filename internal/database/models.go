@@ -202,6 +202,7 @@ type ContractHistory struct {
 type Guild struct {
 	ID               uuid.UUID        `json:"id"`
 	Name             string           `json:"name"`
+	Password         string           `json:"password"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 	UpdatedAt        pgtype.Timestamp `json:"updated_at"`
 	RecruitmentSlots int32            `json:"recruitment_slots"`

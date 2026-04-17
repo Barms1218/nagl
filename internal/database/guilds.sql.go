@@ -24,25 +24,66 @@ func (q *Queries) GetCurrentRank(ctx context.Context, id uuid.UUID) (int32, erro
 	return current_rank, err
 }
 
-const getGuild = `-- name: GetGuild :one
+const getGuildByID = `-- name: GetGuildByID :one
 SELECT
 id,
 current_rank,
 treasury
+recruitment_slots,
+current_rank
 FROM guilds
 WHERE id =$1
 `
 
-type GetGuildRow struct {
-	ID          uuid.UUID `json:"id"`
-	CurrentRank int32     `json:"current_rank"`
-	Treasury    int32     `json:"treasury"`
+type GetGuildByIDRow struct {
+	ID               uuid.UUID `json:"id"`
+	CurrentRank      int32     `json:"current_rank"`
+	RecruitmentSlots int32     `json:"recruitment_slots"`
+	CurrentRank_2    int32     `json:"current_rank_2"`
 }
 
-func (q *Queries) GetGuild(ctx context.Context, id uuid.UUID) (GetGuildRow, error) {
-	row := q.db.QueryRow(ctx, getGuild, id)
-	var i GetGuildRow
-	err := row.Scan(&i.ID, &i.CurrentRank, &i.Treasury)
+func (q *Queries) GetGuildByID(ctx context.Context, id uuid.UUID) (GetGuildByIDRow, error) {
+	row := q.db.QueryRow(ctx, getGuildByID, id)
+	var i GetGuildByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.CurrentRank,
+		&i.RecruitmentSlots,
+		&i.CurrentRank_2,
+	)
+	return i, err
+}
+
+const getGuildByName = `-- name: GetGuildByName :one
+SELECT 
+id,
+current_rank,
+treasury
+recruitment_slots,
+current_rank,
+password
+FROM guilds
+WHERE name = $1
+`
+
+type GetGuildByNameRow struct {
+	ID               uuid.UUID `json:"id"`
+	CurrentRank      int32     `json:"current_rank"`
+	RecruitmentSlots int32     `json:"recruitment_slots"`
+	CurrentRank_2    int32     `json:"current_rank_2"`
+	Password         string    `json:"password"`
+}
+
+func (q *Queries) GetGuildByName(ctx context.Context, name string) (GetGuildByNameRow, error) {
+	row := q.db.QueryRow(ctx, getGuildByName, name)
+	var i GetGuildByNameRow
+	err := row.Scan(
+		&i.ID,
+		&i.CurrentRank,
+		&i.RecruitmentSlots,
+		&i.CurrentRank_2,
+		&i.Password,
+	)
 	return i, err
 }
 
@@ -74,19 +115,26 @@ func (q *Queries) GetRecruitmentSlots(ctx context.Context, id uuid.UUID) (int32,
 
 const insertGuild = `-- name: InsertGuild :one
 INSERT INTO guilds (
-	name 
-) values($1) 
+	name,
+	password
+) values($1, $2) 
 ON CONFLICT DO UPDATE
-SET name = excluded.name
-RETURNING id, name, created_at, updated_at, recruitment_slots, treasury, current_rank
+SET password = excluded.password
+RETURNING id, name, password, created_at, updated_at, recruitment_slots, treasury, current_rank
 `
 
-func (q *Queries) InsertGuild(ctx context.Context, name string) (Guild, error) {
-	row := q.db.QueryRow(ctx, insertGuild, name)
+type InsertGuildParams struct {
+	Name     string `json:"name"`
+	Password string `json:"password"`
+}
+
+func (q *Queries) InsertGuild(ctx context.Context, arg InsertGuildParams) (Guild, error) {
+	row := q.db.QueryRow(ctx, insertGuild, arg.Name, arg.Password)
 	var i Guild
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.RecruitmentSlots,
@@ -100,7 +148,7 @@ const setGuildRank = `-- name: SetGuildRank :one
 UPDATE guilds
 SET current_rank = $2
 WHERE id = $1
-RETURNING id, name, created_at, updated_at, recruitment_slots, treasury, current_rank
+RETURNING id, name, password, created_at, updated_at, recruitment_slots, treasury, current_rank
 `
 
 type SetGuildRankParams struct {
@@ -114,6 +162,7 @@ func (q *Queries) SetGuildRank(ctx context.Context, arg SetGuildRankParams) (Gui
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.RecruitmentSlots,
@@ -127,7 +176,7 @@ const setRecruitmentSlots = `-- name: SetRecruitmentSlots :one
 UPDATE guilds
 SET recruitment_slots = $2
 WHERE id = $1
-RETURNING id, name, created_at, updated_at, recruitment_slots, treasury, current_rank
+RETURNING id, name, password, created_at, updated_at, recruitment_slots, treasury, current_rank
 `
 
 type SetRecruitmentSlotsParams struct {
@@ -141,6 +190,7 @@ func (q *Queries) SetRecruitmentSlots(ctx context.Context, arg SetRecruitmentSlo
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.RecruitmentSlots,
@@ -154,7 +204,7 @@ const updateTreasury = `-- name: UpdateTreasury :one
 UPDATE guilds
 SET treasury = treasury + $2
 WHERE id = $1
-RETURNING id, name, created_at, updated_at, recruitment_slots, treasury, current_rank
+RETURNING id, name, password, created_at, updated_at, recruitment_slots, treasury, current_rank
 `
 
 type UpdateTreasuryParams struct {
@@ -168,6 +218,7 @@ func (q *Queries) UpdateTreasury(ctx context.Context, arg UpdateTreasuryParams) 
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Password,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.RecruitmentSlots,

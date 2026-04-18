@@ -178,7 +178,7 @@ type AdventurerHistory struct {
 
 type Contract struct {
 	ID               uuid.UUID          `json:"id"`
-	GuildID          uuid.UUID          `json:"guild_id"`
+	GuildID          pgtype.UUID        `json:"guild_id"`
 	Title            pgtype.Text        `json:"title"`
 	Difficulty       int32              `json:"difficulty"`
 	MinimumPartySize int32              `json:"minimum_party_size"`

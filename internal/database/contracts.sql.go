@@ -19,8 +19,8 @@ WHERE id = $1
 `
 
 type AssignToGuildParams struct {
-	ID      uuid.UUID `json:"id"`
-	GuildID uuid.UUID `json:"guild_id"`
+	ID      uuid.UUID   `json:"id"`
+	GuildID pgtype.UUID `json:"guild_id"`
 }
 
 func (q *Queries) AssignToGuild(ctx context.Context, arg AssignToGuildParams) error {
@@ -59,7 +59,7 @@ WHERE id = $1
 
 type GetContractByIDRow struct {
 	ID               uuid.UUID          `json:"id"`
-	GuildID          uuid.UUID          `json:"guild_id"`
+	GuildID          pgtype.UUID        `json:"guild_id"`
 	Difficulty       int32              `json:"difficulty"`
 	Description      pgtype.Text        `json:"description"`
 	MinimumPartySize int32              `json:"minimum_party_size"`
@@ -102,57 +102,45 @@ func (q *Queries) GetPartyOnContract(ctx context.Context, contractID pgtype.UUID
 	return i, err
 }
 
-const getPastContractsWithStatus = `-- name: GetPastContractsWithStatus :many
-SELECT 
-ch.id AS contract_history_id,
-ch.guild_id,
-ch.contract_id,
-c.title,
-ch.occurred_at,
-ch.status,
-c.difficulty
-FROM contract_history ch
-JOIN contracts c ON ch.contract_id = c.id
-WHERE ch.status = $1
+const listAvailableContracts = `-- name: ListAvailableContracts :many
+SELECT
+id,
+title,
+difficulty,
+minimum_party_size,
+contract_status
+FROM contracts
+WHERE guild_id IS NULL
 ORDER BY
-	CASE WHEN $2::text = 'title' THEN title END ASC,
-	CASE WHEN $2::text = 'difficulty' THEN difficulty END ASC,
-	CASE WHEN $2::text = 
-		'minimum_party_size' THEN minimum_party_size END ASC
+    CASE WHEN $1::text = 'title' THEN title END ASC,
+    CASE WHEN $1::text = 'difficulty' THEN difficulty END ASC,
+    CASE WHEN $1::text = 'contract_status' THEN contract_status END ASC,
+    CASE WHEN $1::text = 'minimum_party_size' THEN minimum_party_size END ASC
 `
 
-type GetPastContractsWithStatusParams struct {
-	Status ContractStatusEnum `json:"status"`
-	SortBy string             `json:"sort_by"`
+type ListAvailableContractsRow struct {
+	ID               uuid.UUID          `json:"id"`
+	Title            pgtype.Text        `json:"title"`
+	Difficulty       int32              `json:"difficulty"`
+	MinimumPartySize int32              `json:"minimum_party_size"`
+	ContractStatus   ContractStatusEnum `json:"contract_status"`
 }
 
-type GetPastContractsWithStatusRow struct {
-	ContractHistoryID uuid.UUID          `json:"contract_history_id"`
-	GuildID           uuid.UUID          `json:"guild_id"`
-	ContractID        uuid.UUID          `json:"contract_id"`
-	Title             pgtype.Text        `json:"title"`
-	OccurredAt        pgtype.Timestamp   `json:"occurred_at"`
-	Status            ContractStatusEnum `json:"status"`
-	Difficulty        int32              `json:"difficulty"`
-}
-
-func (q *Queries) GetPastContractsWithStatus(ctx context.Context, arg GetPastContractsWithStatusParams) ([]GetPastContractsWithStatusRow, error) {
-	rows, err := q.db.Query(ctx, getPastContractsWithStatus, arg.Status, arg.SortBy)
+func (q *Queries) ListAvailableContracts(ctx context.Context, sortBy string) ([]ListAvailableContractsRow, error) {
+	rows, err := q.db.Query(ctx, listAvailableContracts, sortBy)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetPastContractsWithStatusRow
+	var items []ListAvailableContractsRow
 	for rows.Next() {
-		var i GetPastContractsWithStatusRow
+		var i ListAvailableContractsRow
 		if err := rows.Scan(
-			&i.ContractHistoryID,
-			&i.GuildID,
-			&i.ContractID,
+			&i.ID,
 			&i.Title,
-			&i.OccurredAt,
-			&i.Status,
 			&i.Difficulty,
+			&i.MinimumPartySize,
+			&i.ContractStatus,
 		); err != nil {
 			return nil, err
 		}
@@ -164,88 +152,270 @@ func (q *Queries) GetPastContractsWithStatus(ctx context.Context, arg GetPastCon
 	return items, nil
 }
 
-const insertContractHistory = `-- name: InsertContractHistory :exec
-INSERT INTO contract_history (
-guild_id,
-contract_id,
-party_id,
-difficulty,
-status
-) VALUES ($1, $2, $3, $4, $5)
-`
-
-type InsertContractHistoryParams struct {
-	GuildID    uuid.UUID          `json:"guild_id"`
-	ContractID uuid.UUID          `json:"contract_id"`
-	PartyID    uuid.UUID          `json:"party_id"`
-	Difficulty int32              `json:"difficulty"`
-	Status     ContractStatusEnum `json:"status"`
-}
-
-func (q *Queries) InsertContractHistory(ctx context.Context, arg InsertContractHistoryParams) error {
-	_, err := q.db.Exec(ctx, insertContractHistory,
-		arg.GuildID,
-		arg.ContractID,
-		arg.PartyID,
-		arg.Difficulty,
-		arg.Status,
-	)
-	return err
-}
-
-const listContracts = `-- name: ListContracts :many
+const listContractsWithMaxDifficulty = `-- name: ListContractsWithMaxDifficulty :many
 SELECT
-    id,
-    guild_id,
-    title,
-    difficulty,
-    minimum_party_size,
-    contract_status
+id,
+title,
+difficulty,
+minimum_party_size,
+contract_status
 FROM contracts
-WHERE 
-    ($1::int IS NULL OR difficulty = $1) AND
-    ($2::int IS NULL OR minimum_party_size >= $2) AND
-    ($3::contract_status_enum IS NULL OR contract_status = $3)
+WHERE difficulty <= $1 AND guild_id = $2
 ORDER BY
-    CASE WHEN $4::text = 'title' THEN title END ASC,
-    CASE WHEN $4::text = 'difficulty' THEN difficulty END ASC,
-    CASE WHEN $4::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN $4::text = 'minimum_party_size' THEN minimum_party_size END ASC
+    CASE WHEN $3::text = 'title' THEN title END ASC,
+    CASE WHEN $3::text = 'difficulty' THEN difficulty END ASC,
+    CASE WHEN $3::text = 'contract_status' THEN contract_status END ASC,
+    CASE WHEN $3::text = 'minimum_party_size' THEN minimum_party_size END ASC
 `
 
-type ListContractsParams struct {
-	Difficulty   pgtype.Int4            `json:"difficulty"`
-	MinPartySize pgtype.Int4            `json:"min_party_size"`
-	Status       NullContractStatusEnum `json:"status"`
-	SortBy       string                 `json:"sort_by"`
+type ListContractsWithMaxDifficultyParams struct {
+	Difficulty int32       `json:"difficulty"`
+	GuildID    pgtype.UUID `json:"guild_id"`
+	SortBy     string      `json:"sort_by"`
 }
 
-type ListContractsRow struct {
+type ListContractsWithMaxDifficultyRow struct {
 	ID               uuid.UUID          `json:"id"`
-	GuildID          uuid.UUID          `json:"guild_id"`
 	Title            pgtype.Text        `json:"title"`
 	Difficulty       int32              `json:"difficulty"`
 	MinimumPartySize int32              `json:"minimum_party_size"`
 	ContractStatus   ContractStatusEnum `json:"contract_status"`
 }
 
-func (q *Queries) ListContracts(ctx context.Context, arg ListContractsParams) ([]ListContractsRow, error) {
-	rows, err := q.db.Query(ctx, listContracts,
-		arg.Difficulty,
-		arg.MinPartySize,
-		arg.Status,
-		arg.SortBy,
-	)
+func (q *Queries) ListContractsWithMaxDifficulty(ctx context.Context, arg ListContractsWithMaxDifficultyParams) ([]ListContractsWithMaxDifficultyRow, error) {
+	rows, err := q.db.Query(ctx, listContractsWithMaxDifficulty, arg.Difficulty, arg.GuildID, arg.SortBy)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListContractsRow
+	var items []ListContractsWithMaxDifficultyRow
 	for rows.Next() {
-		var i ListContractsRow
+		var i ListContractsWithMaxDifficultyRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.GuildID,
+			&i.Title,
+			&i.Difficulty,
+			&i.MinimumPartySize,
+			&i.ContractStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContractsWithMaxPartySize = `-- name: ListContractsWithMaxPartySize :many
+SELECT
+id,
+title,
+difficulty,
+minimum_party_size,
+contract_status
+FROM contracts
+WHERE minimum_party_size <= $1 AND guild_id = $2
+ORDER BY
+    CASE WHEN $3::text = 'title' THEN title END ASC,
+    CASE WHEN $3::text = 'difficulty' THEN difficulty END ASC,
+    CASE WHEN $3::text = 'contract_status' THEN contract_status END ASC,
+    CASE WHEN $3::text = 'minimum_party_size' THEN minimum_party_size END ASC
+`
+
+type ListContractsWithMaxPartySizeParams struct {
+	MinimumPartySize int32       `json:"minimum_party_size"`
+	GuildID          pgtype.UUID `json:"guild_id"`
+	SortBy           string      `json:"sort_by"`
+}
+
+type ListContractsWithMaxPartySizeRow struct {
+	ID               uuid.UUID          `json:"id"`
+	Title            pgtype.Text        `json:"title"`
+	Difficulty       int32              `json:"difficulty"`
+	MinimumPartySize int32              `json:"minimum_party_size"`
+	ContractStatus   ContractStatusEnum `json:"contract_status"`
+}
+
+func (q *Queries) ListContractsWithMaxPartySize(ctx context.Context, arg ListContractsWithMaxPartySizeParams) ([]ListContractsWithMaxPartySizeRow, error) {
+	rows, err := q.db.Query(ctx, listContractsWithMaxPartySize, arg.MinimumPartySize, arg.GuildID, arg.SortBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContractsWithMaxPartySizeRow
+	for rows.Next() {
+		var i ListContractsWithMaxPartySizeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Difficulty,
+			&i.MinimumPartySize,
+			&i.ContractStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContractsWithMinDifficulty = `-- name: ListContractsWithMinDifficulty :many
+SELECT
+id,
+title,
+difficulty,
+minimum_party_size,
+contract_status
+FROM contracts
+WHERE difficulty >= $1 AND guild_id = $2
+ORDER BY
+    CASE WHEN $3::text = 'title' THEN title END ASC,
+    CASE WHEN $3::text = 'difficulty' THEN difficulty END ASC,
+    CASE WHEN $3::text = 'contract_status' THEN contract_status END ASC,
+    CASE WHEN $3::text = 'minimum_party_size' THEN minimum_party_size END ASC
+`
+
+type ListContractsWithMinDifficultyParams struct {
+	Difficulty int32       `json:"difficulty"`
+	GuildID    pgtype.UUID `json:"guild_id"`
+	SortBy     string      `json:"sort_by"`
+}
+
+type ListContractsWithMinDifficultyRow struct {
+	ID               uuid.UUID          `json:"id"`
+	Title            pgtype.Text        `json:"title"`
+	Difficulty       int32              `json:"difficulty"`
+	MinimumPartySize int32              `json:"minimum_party_size"`
+	ContractStatus   ContractStatusEnum `json:"contract_status"`
+}
+
+func (q *Queries) ListContractsWithMinDifficulty(ctx context.Context, arg ListContractsWithMinDifficultyParams) ([]ListContractsWithMinDifficultyRow, error) {
+	rows, err := q.db.Query(ctx, listContractsWithMinDifficulty, arg.Difficulty, arg.GuildID, arg.SortBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContractsWithMinDifficultyRow
+	for rows.Next() {
+		var i ListContractsWithMinDifficultyRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Difficulty,
+			&i.MinimumPartySize,
+			&i.ContractStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContractsWithMinPartySize = `-- name: ListContractsWithMinPartySize :many
+SELECT
+id,
+title,
+difficulty,
+minimum_party_size,
+contract_status
+FROM contracts
+WHERE minimum_party_size >= $1 AND guild_id = $2
+ORDER BY
+    CASE WHEN $3::text = 'title' THEN title END ASC,
+    CASE WHEN $3::text = 'difficulty' THEN difficulty END ASC,
+    CASE WHEN $3::text = 'contract_status' THEN contract_status END ASC,
+    CASE WHEN $3::text = 'minimum_party_size' THEN minimum_party_size END ASC
+`
+
+type ListContractsWithMinPartySizeParams struct {
+	MinimumPartySize int32       `json:"minimum_party_size"`
+	GuildID          pgtype.UUID `json:"guild_id"`
+	SortBy           string      `json:"sort_by"`
+}
+
+type ListContractsWithMinPartySizeRow struct {
+	ID               uuid.UUID          `json:"id"`
+	Title            pgtype.Text        `json:"title"`
+	Difficulty       int32              `json:"difficulty"`
+	MinimumPartySize int32              `json:"minimum_party_size"`
+	ContractStatus   ContractStatusEnum `json:"contract_status"`
+}
+
+func (q *Queries) ListContractsWithMinPartySize(ctx context.Context, arg ListContractsWithMinPartySizeParams) ([]ListContractsWithMinPartySizeRow, error) {
+	rows, err := q.db.Query(ctx, listContractsWithMinPartySize, arg.MinimumPartySize, arg.GuildID, arg.SortBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContractsWithMinPartySizeRow
+	for rows.Next() {
+		var i ListContractsWithMinPartySizeRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Difficulty,
+			&i.MinimumPartySize,
+			&i.ContractStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContractsWithStatus = `-- name: ListContractsWithStatus :many
+SELECT
+id,
+title,
+difficulty,
+minimum_party_size,
+contract_status
+FROM contracts
+WHERE contract_status = $1 AND guild_id = $2
+ORDER BY
+    CASE WHEN $3::text = 'title' THEN title END ASC,
+    CASE WHEN $3::text = 'difficulty' THEN difficulty END ASC,
+    CASE WHEN $3::text = 'minimum_party_size' THEN minimum_party_size END ASC
+`
+
+type ListContractsWithStatusParams struct {
+	ContractStatus ContractStatusEnum `json:"contract_status"`
+	GuildID        pgtype.UUID        `json:"guild_id"`
+	SortBy         string             `json:"sort_by"`
+}
+
+type ListContractsWithStatusRow struct {
+	ID               uuid.UUID          `json:"id"`
+	Title            pgtype.Text        `json:"title"`
+	Difficulty       int32              `json:"difficulty"`
+	MinimumPartySize int32              `json:"minimum_party_size"`
+	ContractStatus   ContractStatusEnum `json:"contract_status"`
+}
+
+func (q *Queries) ListContractsWithStatus(ctx context.Context, arg ListContractsWithStatusParams) ([]ListContractsWithStatusRow, error) {
+	rows, err := q.db.Query(ctx, listContractsWithStatus, arg.ContractStatus, arg.GuildID, arg.SortBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContractsWithStatusRow
+	for rows.Next() {
+		var i ListContractsWithStatusRow
+		if err := rows.Scan(
+			&i.ID,
 			&i.Title,
 			&i.Difficulty,
 			&i.MinimumPartySize,
@@ -270,7 +440,7 @@ WHERE id = $1 AND guild_id = $3
 type SetContractStatusParams struct {
 	ID             uuid.UUID          `json:"id"`
 	ContractStatus ContractStatusEnum `json:"contract_status"`
-	GuildID        uuid.UUID          `json:"guild_id"`
+	GuildID        pgtype.UUID        `json:"guild_id"`
 }
 
 func (q *Queries) SetContractStatus(ctx context.Context, arg SetContractStatusParams) error {

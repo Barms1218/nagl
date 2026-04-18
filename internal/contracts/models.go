@@ -14,7 +14,6 @@ type SearchFilters struct {
 
 type ListContractsResponse struct {
 	ID               uuid.UUID `json:"contract_id"`
-	GuildID          uuid.UUID `json:"guild_id"`
 	Title            string    `json:"title"`
 	Difficulty       int32     `json:"difficulty"`
 	MinimumPartySize int32     `json:"minimum_party_size" validate:"gte=1,lte=5"`
@@ -46,4 +45,10 @@ type SetContractStatusRequest struct {
 type ContractClaimRequest struct {
 	ContractID uuid.UUID `json:"contract_id"`
 	GuildID    uuid.UUID `json:"guild_id"`
+}
+
+type ContractWithStatusRequest struct {
+	ContractStatus string    `json:"contract_status" validate:"oneof=complete failed in-progress available"`
+	GuildID        uuid.UUID `json:"guild_id"`
+	SortBy         string    `json:"sort_by" validate:"oneof=title difficulty minimum_party_size contract_status"`
 }

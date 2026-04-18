@@ -7,7 +7,6 @@ import (
 
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type ContractService struct {
@@ -21,7 +20,7 @@ func NewContractService(s *database.Store) *ContractService {
 func (s *ContractService) ClaimContract(ctx context.Context, c ContractClaimRequest) error {
 	params := database.AssignToGuildParams{
 		ID:      c.ContractID,
-		GuildID: c.GuildID,
+		GuildID: database.UUIDToPgtype(c.GuildID),
 	}
 	return s.store.AssignToGuild(ctx, params)
 }
@@ -30,7 +29,7 @@ func (s *ContractService) StartContract(ctx context.Context, c SetContractStatus
 	return s.store.ExecTX(ctx, func(q *database.Queries) error {
 		contractParams := database.SetContractStatusParams{
 			ID:             c.ID,
-			GuildID:        c.GuildID,
+			GuildID:        database.UUIDToPgtype(c.GuildID),
 			ContractStatus: database.ContractStatusEnumInProgress,
 		}
 
@@ -50,29 +49,18 @@ func (s *ContractService) StartContract(ctx context.Context, c SetContractStatus
 	})
 }
 
-func (s *ContractService) ListContracts(ctx context.Context, filter SearchFilters) ([]ListContractsResponse, error) {
-	params := database.ListContractsParams{
-		SortBy: filter.SortBy,
-	}
-
-	if filter.Difficulty != nil {
-		params.Difficulty = pgtype.Int4{Int32: int32(*filter.Difficulty), Valid: true}
-	}
-	if filter.PartySize != nil {
-		params.MinPartySize = pgtype.Int4{Int32: int32(*filter.PartySize), Valid: true}
-	}
-	if filter.Status != nil {
-		params.Status = database.NullContractStatusEnum{
-			ContractStatusEnum: database.ContractStatusEnum(*filter.Status),
-			Valid:              true,
-		}
+func (s *ContractService) ListContractsWithStatus(ctx context.Context, request ContractWithStatusRequest) ([]ListContractsResponse, error) {
+	params := database.ListContractsWithStatusParams{
+		ContractStatus: database.ContractStatusEnum(request.ContractStatus),
+		GuildID:        database.UUIDToPgtype(request.GuildID),
+		SortBy:         request.SortBy,
 	}
 
 	if params.SortBy == "" {
 		params.SortBy = "title"
 	}
 
-	models, err := s.store.ListContracts(ctx, params)
+	models, err := s.store.ListContractsWithStatus(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +69,6 @@ func (s *ContractService) ListContracts(ctx context.Context, filter SearchFilter
 	for _, model := range models {
 		c := ListContractsResponse{
 			ID:               model.ID,
-			GuildID:          model.GuildID,
 			Title:            model.Title.String,
 			Difficulty:       model.Difficulty,
 			MinimumPartySize: model.MinimumPartySize,
@@ -145,7 +132,7 @@ func (s *ContractService) RecordContractStatus(
 	q *database.Queries,
 	cs SetContractStatusRequest) error {
 	contractParams := database.SetContractStatusParams{
-		GuildID:        cs.GuildID,
+		GuildID:        database.UUIDToPgtype(cs.GuildID),
 		ID:             cs.ID,
 		ContractStatus: database.ContractStatusEnum(cs.NewStatus),
 	}

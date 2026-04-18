@@ -8,7 +8,7 @@ CREATE TYPE contract_status_enum AS ENUM(
 
 CREATE TABLE contracts (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+	guild_id UUID  REFERENCES guilds(id) ON DELETE SET NULL,
 	title TEXT,
 	difficulty INTEGER NOT NULL DEFAULT 1 ,
 	minimum_party_size INTEGER NOT NULL DEFAULT 1,

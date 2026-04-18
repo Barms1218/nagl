@@ -12,6 +12,15 @@ type SearchFilters struct {
 	SortBy     string  `json:"sortBy" validate:"oneof=title difficulty minimum_party_size contract_status"`
 }
 
+type ListContractsResponse struct {
+	ID               uuid.UUID `json:"contract_id"`
+	GuildID          uuid.UUID `json:"guild_id"`
+	Title            string    `json:"title"`
+	Difficulty       int32     `json:"difficulty"`
+	MinimumPartySize int32     `json:"minimum_party_size" validate:"gte=1,lte=5"`
+	ContractStatus   string    `json:"contract_status"`
+}
+
 // Parameters for the history of a contract
 type HistoryParams struct {
 	GuildID    uuid.UUID `json:"guild_id"`

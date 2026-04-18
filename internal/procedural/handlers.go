@@ -7,12 +7,16 @@ import (
 	"time"
 )
 
-func RequestAdventurer(p *ProceduralService) http.HandlerFunc {
+type AdventurerGenerator interface {
+	GenerateAdventurer(ctx context.Context) (GeneratedContract, error)
+}
+
+func RequestAdventurer(a AdventurerGenerator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		contract, err := p.GenerateAdventurer(ctx)
+		contract, err := a.GenerateAdventurer(ctx)
 		if err != nil {
 			http.Error(w, "Anthropic API Failure", http.StatusInternalServerError)
 			return

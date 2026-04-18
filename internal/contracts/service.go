@@ -35,22 +35,22 @@ func (s *ContractService) StartContract(ctx context.Context, c SetContractStatus
 		}
 
 		if err := q.SetContractStatus(ctx, contractParams); err != nil {
-			return fmt.Errorf("Error occurred starting contract: %w", err)
+			return err
 		}
 
 		memberParams := database.SetMemberStatusParams{
 			CurrentActivity: database.ActivityEnumOnContract,
-			ContractID:      c.ID,
+			ContractID:      database.UUIDToPgtype(c.ID),
 		}
 
 		if err := q.SetMemberStatus(ctx, memberParams); err != nil {
-			return fmt.Errorf("Error occurred when adventurers started contract: %w", err)
+			return err
 		}
 		return nil
 	})
 }
 
-func (s *ContractService) ListContracts(ctx context.Context, filter SearchFilters) ([]database.ListContractsRow, error) {
+func (s *ContractService) ListContracts(ctx context.Context, filter SearchFilters) ([]ListContractsResponse, error) {
 	params := database.ListContractsParams{
 		SortBy: filter.SortBy,
 	}
@@ -72,7 +72,26 @@ func (s *ContractService) ListContracts(ctx context.Context, filter SearchFilter
 		params.SortBy = "title"
 	}
 
-	return s.store.ListContracts(ctx, params)
+	models, err := s.store.ListContracts(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	contracts := make([]ListContractsResponse, 0, len(models))
+	for _, model := range models {
+		c := ListContractsResponse{
+			ID:               model.ID,
+			GuildID:          model.GuildID,
+			Title:            model.Title.String,
+			Difficulty:       model.Difficulty,
+			MinimumPartySize: model.MinimumPartySize,
+			ContractStatus:   string(model.ContractStatus),
+		}
+
+		contracts = append(contracts, c)
+	}
+
+	return contracts, nil
 
 }
 
@@ -90,7 +109,7 @@ func (s *ContractService) GetPastContractsWithStatus(ctx context.Context, p Past
 }
 
 func (s *ContractService) GetPartyOnContract(ctx context.Context, contractID uuid.UUID) (database.GetPartyOnContractRow, error) {
-	return s.store.GetPartyOnContract(ctx, contractID)
+	return s.store.GetPartyOnContract(ctx, database.UUIDToPgtype(contractID))
 }
 
 func (s *ContractService) SetContractStatus(ctx context.Context, cs SetContractStatusRequest) error {
@@ -107,7 +126,7 @@ func (s *ContractService) SetContractStatus(ctx context.Context, cs SetContractS
 			database.ContractStatusEnum(cs.NewStatus) == database.ContractStatusEnumFailed {
 			partyStatusParams := database.SetMemberStatusParams{
 				CurrentActivity: database.ActivityEnumAvailable,
-				ContractID:      cs.ID,
+				ContractID:      database.UUIDToPgtype(cs.ID),
 			}
 			err := q.SetMemberStatus(ctx, partyStatusParams)
 			if err != nil {
@@ -180,7 +199,7 @@ func (s *ContractService) HandlePartyProgression(
 	}
 
 	partyContractParams := database.InsertMemberContractHistoryParams{
-		ContractID: cs.ID,
+		ContractID: database.UUIDToPgtype(cs.ID),
 		Status:     database.ContractStatusEnum(cs.NewStatus),
 	}
 
@@ -198,7 +217,7 @@ func (s *ContractService) HandlePartyProgression(
 		if member.CompletedCount > 0 && member.CompletedCount%5 == 0 && member.CurrentRank < 5 {
 			if err := q.SetAdventurerRank(ctx, database.SetAdventurerRankParams{
 				CurrentRank: int32(math.Round(float64(member.CompletedCount) / 5.0)),
-				ID:          database.UUIDToPgtype(member.AdventurerID),
+				ID:          member.AdventurerID,
 			}); err != nil {
 				return fmt.Errorf("Error occurred during party member ranking: %w", err)
 			}

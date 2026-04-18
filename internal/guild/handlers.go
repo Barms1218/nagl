@@ -4,14 +4,18 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
-	"net/http"
-	"time"
-
 	"github.com/Barms1218/nagl/internal/auth"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"net/http"
+	"time"
 )
 
-func RegisterGuild(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
+type GuildRegistrator interface {
+	RegisterGuild(ctx context.Context, g GuildAuthRequest) (uuid.UUID, error)
+}
+
+func RegisterGuild(g GuildRegistrator, pk *ecdsa.PrivateKey) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -22,7 +26,7 @@ func RegisterGuild(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
 			return
 		}
 
-		id, err := s.RegisterGuild(ctx, registerRequest)
+		id, err := g.RegisterGuild(ctx, registerRequest)
 		if err != nil {
 			http.Error(w, "Registration failed", http.StatusInternalServerError)
 			return
@@ -46,7 +50,11 @@ func RegisterGuild(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
 	}
 }
 
-func Login(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
+type GuildAuthenticator interface {
+	EnterGuild(ctx context.Context, g GuildAuthRequest) (uuid.UUID, error)
+}
+
+func Login(g GuildAuthenticator, pk *ecdsa.PrivateKey) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -57,7 +65,7 @@ func Login(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
 			return
 		}
 
-		id, err := s.EnterGuild(ctx, loginRequest)
+		id, err := g.EnterGuild(ctx, loginRequest)
 		if err != nil {
 			http.Error(w, "Login Failed", http.StatusInternalServerError)
 			return
@@ -81,7 +89,11 @@ func Login(s *GuildService, pk *ecdsa.PrivateKey) http.HandlerFunc {
 	}
 }
 
-func ChangeTreasuryAmount(s *GuildService) http.HandlerFunc {
+type TreasuryUpdator interface {
+	ChangeTreasuryAmount(ctx context.Context, request UpdateTreasuryRequest) error
+}
+
+func ChangeTreasuryAmount(t TreasuryUpdator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -100,7 +112,7 @@ func ChangeTreasuryAmount(s *GuildService) http.HandlerFunc {
 			return
 		}
 
-		if err := s.ChangeTreasuryAmount(ctx, params); err != nil {
+		if err := t.ChangeTreasuryAmount(ctx, params); err != nil {
 			http.Error(w, "Failed to update Treasury: %w", http.StatusInternalServerError)
 			return
 		}

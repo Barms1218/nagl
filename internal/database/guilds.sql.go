@@ -8,7 +8,7 @@ package database
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const getCurrentRank = `-- name: GetCurrentRank :one
@@ -17,7 +17,7 @@ FROM guilds
 WHERE id = $1
 `
 
-func (q *Queries) GetCurrentRank(ctx context.Context, id pgtype.UUID) (int32, error) {
+func (q *Queries) GetCurrentRank(ctx context.Context, id uuid.UUID) (int32, error) {
 	row := q.db.QueryRow(ctx, getCurrentRank, id)
 	var current_rank int32
 	err := row.Scan(&current_rank)
@@ -36,14 +36,14 @@ WHERE id =$1
 `
 
 type GetGuildByIDRow struct {
-	ID               pgtype.UUID `json:"id"`
-	CurrentRank      int32       `json:"current_rank"`
-	Treasury         int32       `json:"treasury"`
-	RecruitmentSlots int32       `json:"recruitment_slots"`
-	CurrentRank_2    int32       `json:"current_rank_2"`
+	ID               uuid.UUID `json:"id"`
+	CurrentRank      int32     `json:"current_rank"`
+	Treasury         int32     `json:"treasury"`
+	RecruitmentSlots int32     `json:"recruitment_slots"`
+	CurrentRank_2    int32     `json:"current_rank_2"`
 }
 
-func (q *Queries) GetGuildByID(ctx context.Context, id pgtype.UUID) (GetGuildByIDRow, error) {
+func (q *Queries) GetGuildByID(ctx context.Context, id uuid.UUID) (GetGuildByIDRow, error) {
 	row := q.db.QueryRow(ctx, getGuildByID, id)
 	var i GetGuildByIDRow
 	err := row.Scan(
@@ -69,12 +69,12 @@ WHERE name = $1
 `
 
 type GetGuildByNameRow struct {
-	ID               pgtype.UUID `json:"id"`
-	CurrentRank      int32       `json:"current_rank"`
-	Treasury         int32       `json:"treasury"`
-	RecruitmentSlots int32       `json:"recruitment_slots"`
-	CurrentRank_2    int32       `json:"current_rank_2"`
-	Password         string      `json:"password"`
+	ID               uuid.UUID `json:"id"`
+	CurrentRank      int32     `json:"current_rank"`
+	Treasury         int32     `json:"treasury"`
+	RecruitmentSlots int32     `json:"recruitment_slots"`
+	CurrentRank_2    int32     `json:"current_rank_2"`
+	Password         string    `json:"password"`
 }
 
 func (q *Queries) GetGuildByName(ctx context.Context, name string) (GetGuildByNameRow, error) {
@@ -97,7 +97,7 @@ FROM guilds
 WHERE id = $1
 `
 
-func (q *Queries) GetGuildTreasury(ctx context.Context, id pgtype.UUID) (int32, error) {
+func (q *Queries) GetGuildTreasury(ctx context.Context, id uuid.UUID) (int32, error) {
 	row := q.db.QueryRow(ctx, getGuildTreasury, id)
 	var treasury int32
 	err := row.Scan(&treasury)
@@ -110,7 +110,7 @@ FROM guilds
 WHERE id = $1
 `
 
-func (q *Queries) GetRecruitmentSlots(ctx context.Context, id pgtype.UUID) (int32, error) {
+func (q *Queries) GetRecruitmentSlots(ctx context.Context, id uuid.UUID) (int32, error) {
 	row := q.db.QueryRow(ctx, getRecruitmentSlots, id)
 	var recruitment_slots int32
 	err := row.Scan(&recruitment_slots)
@@ -156,8 +156,8 @@ RETURNING id, name, password, created_at, updated_at, recruitment_slots, treasur
 `
 
 type SetGuildRankParams struct {
-	ID          pgtype.UUID `json:"id"`
-	CurrentRank int32       `json:"current_rank"`
+	ID          uuid.UUID `json:"id"`
+	CurrentRank int32     `json:"current_rank"`
 }
 
 func (q *Queries) SetGuildRank(ctx context.Context, arg SetGuildRankParams) error {
@@ -173,8 +173,8 @@ RETURNING id, name, password, created_at, updated_at, recruitment_slots, treasur
 `
 
 type SetRecruitmentSlotsParams struct {
-	ID               pgtype.UUID `json:"id"`
-	RecruitmentSlots int32       `json:"recruitment_slots"`
+	ID               uuid.UUID `json:"id"`
+	RecruitmentSlots int32     `json:"recruitment_slots"`
 }
 
 func (q *Queries) SetRecruitmentSlots(ctx context.Context, arg SetRecruitmentSlotsParams) error {
@@ -190,8 +190,8 @@ RETURNING id, name, password, created_at, updated_at, recruitment_slots, treasur
 `
 
 type UpdateTreasuryParams struct {
-	ID       pgtype.UUID `json:"id"`
-	Treasury int32       `json:"treasury"`
+	ID       uuid.UUID `json:"id"`
+	Treasury int32     `json:"treasury"`
 }
 
 func (q *Queries) UpdateTreasury(ctx context.Context, arg UpdateTreasuryParams) error {

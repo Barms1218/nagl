@@ -20,13 +20,13 @@ id,
 name,
 current_rank,
 role,
-description,
 current_activity
 FROM adventurers
 WHERE guild_id = $1;
 
 -- name: GetAdventurerDetails :one
 SELECT
+id,
 party_id,
 name,
 current_rank,

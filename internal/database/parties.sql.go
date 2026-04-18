@@ -19,8 +19,8 @@ WHERE id = $1
 `
 
 type AddpartyToContractParams struct {
-	ID         pgtype.UUID `json:"id"`
-	ContractID uuid.UUID   `json:"contract_id"`
+	ID         uuid.UUID   `json:"id"`
+	ContractID pgtype.UUID `json:"contract_id"`
 }
 
 func (q *Queries) AddpartyToContract(ctx context.Context, arg AddpartyToContractParams) error {
@@ -40,13 +40,13 @@ GROUP BY ach.adventurer_id, a.name
 `
 
 type CountMemberCompleteContractsRow struct {
-	AdventurerID   pgtype.UUID `json:"adventurer_id"`
+	AdventurerID   uuid.UUID   `json:"adventurer_id"`
 	Name           pgtype.Text `json:"name"`
 	CurrentRank    int32       `json:"current_rank"`
 	CompletedCount int64       `json:"completed_count"`
 }
 
-func (q *Queries) CountMemberCompleteContracts(ctx context.Context, contractID pgtype.UUID) ([]CountMemberCompleteContractsRow, error) {
+func (q *Queries) CountMemberCompleteContracts(ctx context.Context, contractID uuid.UUID) ([]CountMemberCompleteContractsRow, error) {
 	rows, err := q.db.Query(ctx, countMemberCompleteContracts, contractID)
 	if err != nil {
 		return nil, err
@@ -78,8 +78,8 @@ RETURNING id, contract_id, guild_id, name, party_rank, maximum_party_size, creat
 `
 
 type CreatePartyParams struct {
-	GuildID    pgtype.UUID `json:"guild_id"`
-	ContractID uuid.UUID   `json:"contract_id"`
+	GuildID    uuid.UUID   `json:"guild_id"`
+	ContractID pgtype.UUID `json:"contract_id"`
 	Name       string      `json:"name"`
 }
 
@@ -114,8 +114,8 @@ WHERE p.guild_id = $1
 `
 
 type GetAllPartiesRow struct {
-	PartyID         pgtype.UUID        `json:"party_id"`
-	ContractID      pgtype.UUID        `json:"contract_id"`
+	PartyID         uuid.UUID          `json:"party_id"`
+	ContractID      uuid.UUID          `json:"contract_id"`
 	Title           pgtype.Text        `json:"title"`
 	ContractStatus  ContractStatusEnum `json:"contract_status"`
 	Name            pgtype.Text        `json:"name"`
@@ -123,7 +123,7 @@ type GetAllPartiesRow struct {
 	CurrentActivity ActivityEnum       `json:"current_activity"`
 }
 
-func (q *Queries) GetAllParties(ctx context.Context, guildID pgtype.UUID) ([]GetAllPartiesRow, error) {
+func (q *Queries) GetAllParties(ctx context.Context, guildID uuid.UUID) ([]GetAllPartiesRow, error) {
 	rows, err := q.db.Query(ctx, getAllParties, guildID)
 	if err != nil {
 		return nil, err
@@ -164,15 +164,15 @@ WHERE id = $1
 `
 
 type GetPartyRow struct {
-	ID               pgtype.UUID `json:"id"`
-	GuildID          pgtype.UUID `json:"guild_id"`
-	ContractID       uuid.UUID   `json:"contract_id"`
+	ID               uuid.UUID   `json:"id"`
+	GuildID          uuid.UUID   `json:"guild_id"`
+	ContractID       pgtype.UUID `json:"contract_id"`
 	PartyRank        int32       `json:"party_rank"`
 	Name             string      `json:"name"`
 	MaximumPartySize int32       `json:"maximum_party_size"`
 }
 
-func (q *Queries) GetParty(ctx context.Context, id pgtype.UUID) (GetPartyRow, error) {
+func (q *Queries) GetParty(ctx context.Context, id uuid.UUID) (GetPartyRow, error) {
 	row := q.db.QueryRow(ctx, getParty, id)
 	var i GetPartyRow
 	err := row.Scan(
@@ -204,18 +204,18 @@ WHERE p.id = $1
 `
 
 type GetPartyDetailsRow struct {
-	PartyID         pgtype.UUID        `json:"party_id"`
+	PartyID         uuid.UUID          `json:"party_id"`
 	Title           pgtype.Text        `json:"title"`
 	ContractStatus  ContractStatusEnum `json:"contract_status"`
 	Name            string             `json:"name"`
 	PartyRank       int32              `json:"party_rank"`
-	AdventurerID    pgtype.UUID        `json:"adventurer_id"`
+	AdventurerID    uuid.UUID          `json:"adventurer_id"`
 	CurrentActivity ActivityEnum       `json:"current_activity"`
 	Name_2          pgtype.Text        `json:"name_2"`
 	Role            RoleEnum           `json:"role"`
 }
 
-func (q *Queries) GetPartyDetails(ctx context.Context, id pgtype.UUID) ([]GetPartyDetailsRow, error) {
+func (q *Queries) GetPartyDetails(ctx context.Context, id uuid.UUID) ([]GetPartyDetailsRow, error) {
 	rows, err := q.db.Query(ctx, getPartyDetails, id)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ WHERE p.contract_id = $1
 `
 
 type InsertMemberContractHistoryParams struct {
-	ContractID uuid.UUID          `json:"contract_id"`
+	ContractID pgtype.UUID        `json:"contract_id"`
 	Status     ContractStatusEnum `json:"status"`
 }
 
@@ -279,8 +279,8 @@ INSERT INTO party_history (
 `
 
 type InsertPartyHistoryParams struct {
-	PartyID        pgtype.UUID        `json:"party_id"`
-	ContractID     pgtype.UUID        `json:"contract_id"`
+	PartyID        uuid.UUID          `json:"party_id"`
+	ContractID     uuid.UUID          `json:"contract_id"`
 	ContractStatus ContractStatusEnum `json:"contract_status"`
 }
 
@@ -295,7 +295,7 @@ SET contract_id = NULL
 WHERE id = $1
 `
 
-func (q *Queries) RemovePartyFromContract(ctx context.Context, id pgtype.UUID) error {
+func (q *Queries) RemovePartyFromContract(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, removePartyFromContract, id)
 	return err
 }
@@ -312,7 +312,7 @@ WHERE party_id = (
 
 type SetMemberStatusParams struct {
 	CurrentActivity ActivityEnum `json:"current_activity"`
-	ContractID      uuid.UUID    `json:"contract_id"`
+	ContractID      pgtype.UUID  `json:"contract_id"`
 }
 
 func (q *Queries) SetMemberStatus(ctx context.Context, arg SetMemberStatusParams) error {
@@ -327,8 +327,8 @@ WHERE id = $2
 `
 
 type SetPartyRankParams struct {
-	PartyRank int32       `json:"party_rank"`
-	ID        pgtype.UUID `json:"id"`
+	PartyRank int32     `json:"party_rank"`
+	ID        uuid.UUID `json:"id"`
 }
 
 func (q *Queries) SetPartyRank(ctx context.Context, arg SetPartyRankParams) error {

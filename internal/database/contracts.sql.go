@@ -19,8 +19,8 @@ WHERE id = $1
 `
 
 type AssignToGuildParams struct {
-	ID      pgtype.UUID `json:"id"`
-	GuildID pgtype.UUID `json:"guild_id"`
+	ID      uuid.UUID `json:"id"`
+	GuildID uuid.UUID `json:"guild_id"`
 }
 
 func (q *Queries) AssignToGuild(ctx context.Context, arg AssignToGuildParams) error {
@@ -38,7 +38,7 @@ AND ph.contract_status = 'complete'
 AND c.difficulty >= p.party_rank
 `
 
-func (q *Queries) CountPartyCompleteContracts(ctx context.Context, partyID pgtype.UUID) (int64, error) {
+func (q *Queries) CountPartyCompleteContracts(ctx context.Context, partyID uuid.UUID) (int64, error) {
 	row := q.db.QueryRow(ctx, countPartyCompleteContracts, partyID)
 	var count int64
 	err := row.Scan(&count)
@@ -58,15 +58,15 @@ WHERE id = $1
 `
 
 type GetContractByIDRow struct {
-	ID               pgtype.UUID        `json:"id"`
-	GuildID          pgtype.UUID        `json:"guild_id"`
+	ID               uuid.UUID          `json:"id"`
+	GuildID          uuid.UUID          `json:"guild_id"`
 	Difficulty       int32              `json:"difficulty"`
 	Description      pgtype.Text        `json:"description"`
 	MinimumPartySize int32              `json:"minimum_party_size"`
 	ContractStatus   ContractStatusEnum `json:"contract_status"`
 }
 
-func (q *Queries) GetContractByID(ctx context.Context, id pgtype.UUID) (GetContractByIDRow, error) {
+func (q *Queries) GetContractByID(ctx context.Context, id uuid.UUID) (GetContractByIDRow, error) {
 	row := q.db.QueryRow(ctx, getContractByID, id)
 	var i GetContractByIDRow
 	err := row.Scan(
@@ -90,12 +90,12 @@ WHERE contract_id = $1
 `
 
 type GetPartyOnContractRow struct {
-	ID        pgtype.UUID `json:"id"`
-	Name      string      `json:"name"`
-	PartyRank int32       `json:"party_rank"`
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	PartyRank int32     `json:"party_rank"`
 }
 
-func (q *Queries) GetPartyOnContract(ctx context.Context, contractID uuid.UUID) (GetPartyOnContractRow, error) {
+func (q *Queries) GetPartyOnContract(ctx context.Context, contractID pgtype.UUID) (GetPartyOnContractRow, error) {
 	row := q.db.QueryRow(ctx, getPartyOnContract, contractID)
 	var i GetPartyOnContractRow
 	err := row.Scan(&i.ID, &i.Name, &i.PartyRank)
@@ -127,9 +127,9 @@ type GetPastContractsWithStatusParams struct {
 }
 
 type GetPastContractsWithStatusRow struct {
-	ContractHistoryID pgtype.UUID        `json:"contract_history_id"`
-	GuildID           pgtype.UUID        `json:"guild_id"`
-	ContractID        pgtype.UUID        `json:"contract_id"`
+	ContractHistoryID uuid.UUID          `json:"contract_history_id"`
+	GuildID           uuid.UUID          `json:"guild_id"`
+	ContractID        uuid.UUID          `json:"contract_id"`
 	Title             pgtype.Text        `json:"title"`
 	OccurredAt        pgtype.Timestamp   `json:"occurred_at"`
 	Status            ContractStatusEnum `json:"status"`
@@ -175,9 +175,9 @@ status
 `
 
 type InsertContractHistoryParams struct {
-	GuildID    pgtype.UUID        `json:"guild_id"`
-	ContractID pgtype.UUID        `json:"contract_id"`
-	PartyID    pgtype.UUID        `json:"party_id"`
+	GuildID    uuid.UUID          `json:"guild_id"`
+	ContractID uuid.UUID          `json:"contract_id"`
+	PartyID    uuid.UUID          `json:"party_id"`
 	Difficulty int32              `json:"difficulty"`
 	Status     ContractStatusEnum `json:"status"`
 }
@@ -221,8 +221,8 @@ type ListContractsParams struct {
 }
 
 type ListContractsRow struct {
-	ID               pgtype.UUID        `json:"id"`
-	GuildID          pgtype.UUID        `json:"guild_id"`
+	ID               uuid.UUID          `json:"id"`
+	GuildID          uuid.UUID          `json:"guild_id"`
 	Title            pgtype.Text        `json:"title"`
 	Difficulty       int32              `json:"difficulty"`
 	MinimumPartySize int32              `json:"minimum_party_size"`
@@ -268,9 +268,9 @@ WHERE id = $1 AND guild_id = $3
 `
 
 type SetContractStatusParams struct {
-	ID             pgtype.UUID        `json:"id"`
+	ID             uuid.UUID          `json:"id"`
 	ContractStatus ContractStatusEnum `json:"contract_status"`
-	GuildID        pgtype.UUID        `json:"guild_id"`
+	GuildID        uuid.UUID          `json:"guild_id"`
 }
 
 func (q *Queries) SetContractStatus(ctx context.Context, arg SetContractStatusParams) error {

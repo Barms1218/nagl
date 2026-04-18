@@ -15,20 +15,27 @@ type AdventurerContractHistoryRequest struct {
 	Status       string    `json:"status"`
 }
 
+type AdventurersWithStatusRequest struct {
+	GuildID         uuid.UUID `json:"guild_id"`
+	CurrentActivity string    `json:"current_activity" validate:"oneof=available on_quest sick_leave retired dead"`
+	SortBy          string    `json:"sort_by" validate:"oneof=joined_at name role"`
+}
+
 type GetMembersRequest struct {
 	GuildID uuid.UUID `json:"guild_id"`
 	SortBy  string    `json:"sort_by" validate:"oneof=joined_at name role activity"`
 }
 
-type GetMembersResponse struct {
+type GetAdventurersResponse struct {
 	ID              uuid.UUID `json:"adventurer_id"`
-	CurrentRank     int       `json:"adventurer_rank"`
-	CurrentActivity string    `json:"current_activity"`
 	Name            string    `json:"name"`
+	CurrentRank     int       `json:"adventurer_rank"`
 	Role            string    `json:"role"`
+	CurrentActivity string    `json:"current_activity"`
 }
 
 type AdventurerDetailsRequest struct {
+	ID              uuid.UUID `json:"adventurer_id"`
 	PartyID         uuid.UUID `json:"party_id"`
 	Name            string    `json:"name"`
 	CurrentRank     int       `json:"current_rank"`
@@ -38,6 +45,7 @@ type AdventurerDetailsRequest struct {
 }
 
 type DetailsResponse struct {
+	ID              uuid.UUID `json:"adventurer_id"`
 	PartyID         uuid.UUID `json:"party_id"`
 	Name            string    `json:"name"`
 	CurrentRank     int       `json:"current_rank"`

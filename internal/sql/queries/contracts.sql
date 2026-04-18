@@ -3,22 +3,26 @@ SELECT
 id,
 title,
 difficulty,
-minimum_party_size,
+rec_party_size,
 contract_status
 FROM contracts
 WHERE guild_id IS NULL
+AND($1::int IS NULL OR difficulty <= $1)
+AND($2::int IS NULL OR difficulty >=$2)
+AND($3::contract_status_enum IS NULL OR contract_status = $3)
+AND($4::int IS NULL OR rec_party_size = $4)
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'minimum_party_size' THEN minimum_party_size END ASC;
+    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
 -- name: ListContractsWithMinDifficulty :many
 SELECT
 id,
 title,
 difficulty,
-minimum_party_size,
+rec_party_size,
 contract_status
 FROM contracts
 WHERE difficulty >= $1 AND guild_id = $2
@@ -26,14 +30,14 @@ ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'minimum_party_size' THEN minimum_party_size END ASC;
+    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
 -- name: ListContractsWithMaxDifficulty :many
 SELECT
 id,
 title,
 difficulty,
-minimum_party_size,
+rec_party_size,
 contract_status
 FROM contracts
 WHERE difficulty <= $1 AND guild_id = $2
@@ -41,51 +45,51 @@ ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'minimum_party_size' THEN minimum_party_size END ASC;
+    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
 -- name: ListContractsWithStatus :many
 SELECT
 id,
 title,
 difficulty,
-minimum_party_size,
+rec_party_size,
 contract_status
 FROM contracts
 WHERE contract_status = $1 AND guild_id = $2
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'minimum_party_size' THEN minimum_party_size END ASC;
+    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
 -- name: ListContractsWithMinPartySize :many
 SELECT
 id,
 title,
 difficulty,
-minimum_party_size,
+rec_party_size,
 contract_status
 FROM contracts
-WHERE minimum_party_size >= $1 AND guild_id = $2
+WHERE rec_party_size >= $1 AND guild_id = $2
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'minimum_party_size' THEN minimum_party_size END ASC;
+    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
 -- name: ListContractsWithMaxPartySize :many
 SELECT
 id,
 title,
 difficulty,
-minimum_party_size,
+rec_party_size,
 contract_status
 FROM contracts
-WHERE minimum_party_size <= $1 AND guild_id = $2
+WHERE rec_party_size <= $1 AND guild_id = $2
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'minimum_party_size' THEN minimum_party_size END ASC;
+    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
 
 -- name: GetContractByID :one
@@ -94,7 +98,7 @@ id,
 guild_id,
 difficulty,
 description,
-minimum_party_size,
+rec_party_size,
 contract_status
 FROM contracts
 WHERE id = $1;

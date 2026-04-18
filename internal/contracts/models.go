@@ -6,10 +6,11 @@ import (
 
 // Search parameters for a contract
 type SearchFilters struct {
-	Difficulty *int    `json:"difficulty" validate:"omitempty,gte=1,lte=5"`
-	PartySize  *int    `json:"partySize" validate:"omitempty,gte=1,lte=5"`
-	Status     *string `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
-	SortBy     string  `json:"sortBy" validate:"oneof=title difficulty minimum_party_size contract_status"`
+	MinDifficulty *int    `json:"min_difficulty" validate:"omitempty,gte=1,lte=5"`
+	MaxDifficulty *int    `json:"max_difficulty" validate:"omitempty,gte=1,lte=5"`
+	PartySize     *int    `json:"partySize" validate:"omitempty,gte=1,lte=5"`
+	Status        *string `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
+	SortBy        string  `json:"sortBy" validate:"oneof=title difficulty minimum_party_size contract_status"`
 }
 
 type ListContractsResponse struct {
@@ -51,4 +52,10 @@ type ContractWithStatusRequest struct {
 	ContractStatus string    `json:"contract_status" validate:"oneof=complete failed in-progress available"`
 	GuildID        uuid.UUID `json:"guild_id"`
 	SortBy         string    `json:"sort_by" validate:"oneof=title difficulty minimum_party_size contract_status"`
+}
+
+type ContractWithDifficultyRequeset struct {
+	Difficulty int32     `json:"difficulty" validate:"gte=1,lte=5"`
+	GuildID    uuid.UUID `json:"guild_id"`
+	SortBy     string    `json:"sort_by" validate:"oneof=title difficulty minimum_party_size contract_status"`
 }

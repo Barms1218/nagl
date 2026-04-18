@@ -82,6 +82,62 @@ func (s *ContractService) ListContractsWithStatus(ctx context.Context, request C
 
 }
 
+func (s *ContractService) ListContractsWithMinDifficulty(ctx context.Context, request ContractWithDifficultyRequeset) ([]ListContractsResponse, error) {
+	params := database.ListContractsWithMinDifficultyParams{
+		Difficulty: request.Difficulty,
+		GuildID:    database.UUIDToPgtype(request.GuildID),
+		SortBy:     request.SortBy,
+	}
+
+	models, err := s.store.ListContractsWithMinDifficulty(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	contracts := make([]ListContractsResponse, 0, len(models))
+	for _, model := range models {
+		c := ListContractsResponse{
+			ID:               model.ID,
+			Title:            model.Title.String,
+			Difficulty:       model.Difficulty,
+			MinimumPartySize: model.MinimumPartySize,
+			ContractStatus:   string(model.ContractStatus),
+		}
+
+		contracts = append(contracts, c)
+	}
+
+	return contracts, nil
+}
+
+func (s *ContractService) ListContractsWithMaxDifficulty(ctx context.Context, request ContractWithDifficultyRequeset) ([]ListContractsResponse, error) {
+	params := database.ListContractsWithMaxDifficultyParams{
+		Difficulty: request.Difficulty,
+		GuildID:    database.UUIDToPgtype(request.GuildID),
+		SortBy:     request.SortBy,
+	}
+
+	models, err := s.store.ListContractsWithMaxDifficulty(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	contracts := make([]ListContractsResponse, 0, len(models))
+	for _, model := range models {
+		c := ListContractsResponse{
+			ID:               model.ID,
+			Title:            model.Title.String,
+			Difficulty:       model.Difficulty,
+			MinimumPartySize: model.MinimumPartySize,
+			ContractStatus:   string(model.ContractStatus),
+		}
+
+		contracts = append(contracts, c)
+	}
+
+	return contracts, nil
+}
+
 func (s *ContractService) GetPastContractsWithStatus(ctx context.Context, p PastContractsParams) ([]database.GetPastContractsWithStatusRow, error) {
 	params := database.GetPastContractsWithStatusParams{
 		Status: database.ContractStatusEnum(p.Status),

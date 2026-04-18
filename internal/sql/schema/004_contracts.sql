@@ -11,7 +11,7 @@ CREATE TABLE contracts (
 	guild_id UUID  REFERENCES guilds(id) ON DELETE SET NULL,
 	title TEXT,
 	difficulty INTEGER NOT NULL DEFAULT 1 ,
-	minimum_party_size INTEGER NOT NULL DEFAULT 1,
+	rec_party_size INTEGER NOT NULL DEFAULT 1,
 	description TEXT,
 	CHECK (difficulty >= 1 AND difficulty <= 5),
 	contract_status contract_status_enum NOT NULL DEFAULT 'available',

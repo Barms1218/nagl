@@ -3,7 +3,7 @@ INSERT INTO guilds (
 	name,
 	password
 ) values($1, $2) 
-ON CONFLICT DO UPDATE
+ON CONFLICT (name) DO UPDATE
 SET password = excluded.password
 RETURNING *;
 

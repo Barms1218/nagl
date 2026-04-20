@@ -29,7 +29,7 @@ func ClaimContract(s ContractClaimer) http.HandlerFunc {
 
 		contractID, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Invalid Contract ID: %w", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Invalid Contract ID: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -39,7 +39,7 @@ func ClaimContract(s ContractClaimer) http.HandlerFunc {
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&claimRequest); err != nil {
-			http.Error(w, fmt.Sprintf("Invalid Request Body: %w", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Invalid Request Body: %v", err), http.StatusBadRequest)
 			return
 		}
 
@@ -62,12 +62,12 @@ func StartContract(s ContractStarter) http.HandlerFunc {
 
 		var request SetContractStatusRequest
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			http.Error(w, fmt.Sprintf("Bad Request Body: %w", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Bad Request Body: %v", err), http.StatusBadRequest)
 			return
 		}
 
 		if err := s.StartContract(ctx, request); err != nil {
-			http.Error(w, fmt.Sprintf("Contract Start Failed: %w", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Contract Start Failed: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -86,22 +86,21 @@ func ListAvailableContracts(s AvailableContractLister) http.HandlerFunc {
 
 		var filters SearchFilters
 		if err := json.NewDecoder(r.Body).Decode(&filters); err != nil {
-			http.Error(w, fmt.Sprintf("Bad Request: %w", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Bad Request: %v", err), http.StatusBadRequest)
 			return
 		}
 
 		contracts, err := s.ListAvailableContracts(ctx, filters)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error listing contracts: %w", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Error listing contracts: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(contracts); err != nil {
 			http.Error(w, "JSON Encoding error", http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
 	}
 }
 
@@ -116,7 +115,7 @@ func ListGuildContracts(s GuildContractLister) http.HandlerFunc {
 
 		var filters SearchFilters
 		if err := json.NewDecoder(r.Body).Decode(&filters); err != nil {
-			http.Error(w, fmt.Sprintf("Bad Request: %w", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Bad Request: %v", err), http.StatusBadRequest)
 			return
 		}
 
@@ -128,7 +127,7 @@ func ListGuildContracts(s GuildContractLister) http.HandlerFunc {
 
 		contracts, err := s.ListGuildContracts(ctx, guildID, filters)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error listing contracts: %w", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Error listing contracts: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -137,7 +136,6 @@ func ListGuildContracts(s GuildContractLister) http.HandlerFunc {
 			http.Error(w, "JSON Encoding error", http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -159,7 +157,7 @@ func GetAvailableContractDetails(a AvailableContractDescriber) http.HandlerFunc 
 
 		contract, err := a.GetAvailableContractDetails(ctx, contract_id)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Request Failed: %w", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Request Failed: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -189,7 +187,7 @@ func GetActiveContractDetails(a ActiveContractDescriber) http.HandlerFunc {
 
 		contract, err := a.GetActiveContractDetails(ctx, contract_id)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Request Failed: %w", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Request Failed: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -212,12 +210,12 @@ func UpdateContract(c ContractUpdater) http.HandlerFunc {
 
 		var request SetContractStatusRequest
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			http.Error(w, fmt.Sprintf("Bad Request: %w", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Bad Request: %v", err), http.StatusBadRequest)
 			return
 		}
 
 		if err := c.SetContractStatus(ctx, request); err != nil {
-			http.Error(w, fmt.Sprintf("%w", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
 			return
 		}
 

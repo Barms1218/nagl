@@ -50,12 +50,23 @@ func (s *ContractService) StartContract(ctx context.Context, c SetContractStatus
 }
 
 func (s *ContractService) ListAvailableContracts(ctx context.Context, sf SearchFilters) ([]ListContractsResponse, error) {
-	params := database.ListAvailableContractsParams{
-		MinDifficulty: database.IntToPgtype(*sf.MinDifficulty),
-		MaxDifficulty: database.IntToPgtype(*sf.MaxDifficulty),
-		Status:        database.NullContractStatusEnum{ContractStatusEnum: database.ContractStatusEnum(*sf.Status), Valid: true},
-		PartySize:     database.IntToPgtype(*sf.PartySize),
-		SortBy:        sf.SortBy,
+	var params database.ListAvailableContractsParams
+	if sf.MinDifficulty != nil {
+		params.MinDifficulty = database.IntToPgtype(*sf.MinDifficulty)
+	}
+	if sf.MaxDifficulty != nil {
+		params.MaxDifficulty = database.IntToPgtype(*sf.MaxDifficulty)
+	}
+	if sf.Status != nil {
+		params.Status = database.NullContractStatusEnum{ContractStatusEnum: database.ContractStatusEnum(*sf.Status), Valid: true}
+	}
+	if sf.PartySize != nil {
+		params.PartySize = database.IntToPgtype(*sf.PartySize)
+	}
+	if sf.SortBy != nil {
+		params.SortBy = *sf.SortBy
+	} else {
+		params.SortBy = "title"
 	}
 
 	models, err := s.store.ListAvailableContracts(ctx, params)
@@ -79,15 +90,24 @@ func (s *ContractService) ListAvailableContracts(ctx context.Context, sf SearchF
 }
 
 func (s *ContractService) ListGuildContracts(ctx context.Context, guildID uuid.UUID, sf SearchFilters) ([]ListContractsResponse, error) {
-	params := database.ListGuildContractsParams{
-		GuildID:       database.UUIDToPgtype(guildID),
-		MinDifficulty: database.IntToPgtype(*sf.MinDifficulty),
-		MaxDifficulty: database.IntToPgtype(*sf.MaxDifficulty),
-		Status:        database.NullContractStatusEnum{ContractStatusEnum: database.ContractStatusEnum(*sf.Status), Valid: true},
-		SortBy:        sf.SortBy,
-	}
+	var params database.ListGuildContractsParams
 
-	if params.SortBy == "" {
+	params.GuildID = database.UUIDToPgtype(guildID)
+	if sf.MinDifficulty != nil {
+		params.MinDifficulty = database.IntToPgtype(*sf.MinDifficulty)
+	}
+	if sf.MaxDifficulty != nil {
+		params.MaxDifficulty = database.IntToPgtype(*sf.MaxDifficulty)
+	}
+	if sf.Status != nil {
+		params.Status = database.NullContractStatusEnum{ContractStatusEnum: database.ContractStatusEnum(*sf.Status), Valid: true}
+	}
+	if sf.PartySize != nil {
+		params.PartySize = database.IntToPgtype(*sf.PartySize)
+	}
+	if sf.SortBy != nil {
+		params.SortBy = *sf.SortBy
+	} else {
 		params.SortBy = "title"
 	}
 

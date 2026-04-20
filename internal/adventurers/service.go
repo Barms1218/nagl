@@ -16,15 +16,23 @@ func NewAdventurerService(s *database.Store) *AdventurerService {
 }
 
 func (s *AdventurerService) ListRecruitableAdventurers(ctx context.Context, filters SearchFilters) ([]ListAdventurersResponse, error) {
-	params := database.ListRecruitableAdventurersParams{
-		Name:    database.StringToPgtype(*filters.Name),
-		MinRank: database.IntToPgtype(*filters.MinRank),
-		MaxRank: database.IntToPgtype(*filters.MaxRank),
-		Role:    database.NullRoleEnum{RoleEnum: database.RoleEnum(*filters.Role)},
-		SortBy:  *filters.SortBy,
-	}
+	var params database.ListRecruitableAdventurersParams
+	if filters.Name != nil {
+		params.Name = database.StringToPgtype(*filters.Name)
 
-	if params.SortBy == "" {
+	}
+	if filters.MinRank != nil {
+		params.MinRank = database.IntToPgtype(*filters.MinRank)
+	}
+	if filters.MaxRank != nil {
+		params.MaxRank = database.IntToPgtype(*filters.MaxRank)
+	}
+	if filters.Role != nil {
+		params.Role = database.NullRoleEnum{RoleEnum: database.RoleEnum(*filters.Role)}
+	}
+	if filters.SortBy != nil {
+		params.SortBy = *filters.SortBy
+	} else {
 		params.SortBy = "name"
 	}
 
@@ -64,15 +72,40 @@ func (s *AdventurerService) GetAdventurerDetails(ctx context.Context, id uuid.UU
 	return response, nil
 }
 
+func (s *AdventurerService) HireAdventurer(ctx context.Context, r SetAdventurerHiredRequest) error {
+	params := database.SetAdventurerHiredParams{
+		GuildID: database.UUIDToPgtype(r.GuildID),
+		ID:      r.AdventurerID,
+	}
+
+	if err := s.store.SetAdventurerHired(ctx, params); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *AdventurerService) ListGuildMembers(ctx context.Context, guildID uuid.UUID, filters GuildMemberFilters) ([]ListMembersResponse, error) {
-	params := database.ListGuildMembersParams{
-		GuildID:         database.UUIDToPgtype(guildID),
-		Name:            database.StringToPgtype(*filters.Name),
-		MinRank:         database.IntToPgtype(*filters.MinRank),
-		MaxRank:         database.IntToPgtype(*filters.MaxRank),
-		Role:            database.NullRoleEnum{RoleEnum: database.RoleEnum(*filters.Role)},
-		CurrentActivity: database.NullActivityEnum{ActivityEnum: database.ActivityEnum(*filters.Activity)},
-		SortBy:          *filters.SortBy,
+	var params database.ListGuildMembersParams
+
+	params.GuildID = database.UUIDToPgtype(guildID)
+	if filters.Name != nil {
+		params.Name = database.StringToPgtype(*filters.Name)
+
+	}
+	if filters.MinRank != nil {
+		params.MinRank = database.IntToPgtype(*filters.MinRank)
+	}
+	if filters.MaxRank != nil {
+		params.MaxRank = database.IntToPgtype(*filters.MaxRank)
+	}
+	if filters.Role != nil {
+		params.Role = database.NullRoleEnum{RoleEnum: database.RoleEnum(*filters.Role)}
+	}
+	if filters.SortBy != nil {
+		params.SortBy = *filters.SortBy
+	} else {
+		params.SortBy = "name"
 	}
 	models, err := s.store.ListGuildMembers(ctx, params)
 	if err != nil {
@@ -91,4 +124,8 @@ func (s *AdventurerService) ListGuildMembers(ctx context.Context, guildID uuid.U
 		response = append(response, r)
 	}
 	return response, nil
+}
+
+func (s *AdventurerService) GetUpkeepCost(ctx context.Context, adventurerID uuid.UUID) (int32, error) {
+	return s.store.GetAdventurerUpkeepCost(ctx, adventurerID)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func UUIDToPgtype(id uuid.UUID) pgtype.UUID {
-	return pgtype.UUID{Bytes: id, Valid: true}
+	return pgtype.UUID{Bytes: id, Valid: id != uuid.UUID{}}
 }
 
 func PgTypeToUUID(id pgtype.UUID) uuid.UUID {
@@ -23,5 +23,5 @@ func IntToPgtype(n int32) pgtype.Int4 {
 }
 
 func StringToPgtype(s string) pgtype.Text {
-	return pgtype.Text{String: s, Valid: true}
+	return pgtype.Text{String: s, Valid: s != ""}
 }

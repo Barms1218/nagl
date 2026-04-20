@@ -21,6 +21,11 @@ type GuildMemberFilters struct {
 	SortBy   *string `json:"sort_by" validate:"oneof=name current_rank role current_activity"`
 }
 
+type SetAdventurerHiredRequest struct {
+	GuildID      uuid.UUID `json:"guild_id"`
+	AdventurerID uuid.UUID `json:"adventurer_id"`
+}
+
 type ListAdventurersResponse struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`

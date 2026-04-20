@@ -10,7 +10,7 @@ type SearchFilters struct {
 	MaxDifficulty *int32  `json:"max_difficulty" validate:"omitempty,gte=1,lte=5"`
 	PartySize     *int32  `json:"partySize" validate:"omitempty,gte=1,lte=5"`
 	Status        *string `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
-	SortBy        string  `json:"sortBy" validate:"oneof=title difficulty minimum_party_size contract_status"`
+	SortBy        *string `json:"sortBy" validate:"oneof=title difficulty minimum_party_size contract_status"`
 }
 
 type ListContractsResponse struct {

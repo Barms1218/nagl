@@ -57,8 +57,8 @@ func ListGuildMembers(g GuildLister) http.HandlerFunc {
 		}
 
 		var filters GuildMemberFilters
-		if err := json.NewDecoder(r.Body).Decode(filters); err != nil {
-			http.Error(w, fmt.Sprintf("Bad Reuest Body: %w", err), http.StatusInternalServerError)
+		if err := json.NewDecoder(r.Body).Decode(&filters); err != nil {
+			http.Error(w, fmt.Sprintf("Bad Request Body: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -100,14 +100,86 @@ func GetDetails(s DetailsGetter) http.HandlerFunc {
 
 		details, err := s.GetAdventurerDetails(ctx, adventurerID)
 		if err != nil {
-			http.Error(w, "Details request failed: %w", http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Details request failed: %v", err), http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(details); err != nil {
-			http.Error(w, "JSON Encoding error: %w", http.StatusInternalServerError)
+			http.Error(w, "JSON Encoding error", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+type Recruiter interface {
+	HireAdventurer(ctx context.Context, r SetAdventurerHiredRequest) error
+}
+
+func HireAdventurer(s Recruiter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		guildID, ok := auth.GuildIDFromContext(ctx)
+		if !ok {
+			http.Error(w, "Missing Guild ID Claim", http.StatusUnauthorized)
+			return
+		}
+
+		idStr := chi.URLParam(r, "id")
+		adventurerID, err := uuid.Parse(idStr)
+		if err != nil {
+			http.Error(w, "Invalid adventurer ID", http.StatusBadRequest)
+			return
+		}
+
+		request := SetAdventurerHiredRequest{
+			GuildID:      guildID,
+			AdventurerID: adventurerID,
+		}
+
+		if err := s.HireAdventurer(ctx, request); err != nil {
+			http.Error(w, fmt.Sprintf("Request Failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+type UpkeepDisplayer interface {
+	GetUpkeepCost(ctx context.Context, adventurerID uuid.UUID) (int32, error)
+}
+
+func GetUpkeepCost(u UpkeepDisplayer) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		_, ok := auth.GuildIDFromContext(ctx)
+		if !ok {
+			http.Error(w, "Missing Guild ID Claim", http.StatusUnauthorized)
+			return
+		}
+
+		idStr := chi.URLParam(r, "id")
+		adventurerID, err := uuid.Parse(idStr)
+		if err != nil {
+			http.Error(w, "Invalid adventurer ID", http.StatusBadRequest)
+			return
+		}
+
+		cost, err := u.GetUpkeepCost(ctx, adventurerID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Request Failed: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(cost); err != nil {
+			http.Error(w, "JSON Encoding error", http.StatusInternalServerError)
 			return
 		}
 	}

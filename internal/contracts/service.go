@@ -49,93 +49,105 @@ func (s *ContractService) StartContract(ctx context.Context, c SetContractStatus
 	})
 }
 
-func (s *ContractService) ListContractsWithStatus(ctx context.Context, request ContractWithStatusRequest) ([]ListContractsResponse, error) {
-	params := database.ListContractsWithStatusParams{
-		ContractStatus: database.ContractStatusEnum(request.ContractStatus),
-		GuildID:        database.UUIDToPgtype(request.GuildID),
-		SortBy:         request.SortBy,
+func (s *ContractService) ListAvailableContracts(ctx context.Context, sf SearchFilters) ([]ListContractsResponse, error) {
+	params := database.ListAvailableContractsParams{
+		MinDifficulty: database.IntToPgtype(*sf.MinDifficulty),
+		MaxDifficulty: database.IntToPgtype(*sf.MaxDifficulty),
+		Status:        database.NullContractStatusEnum{ContractStatusEnum: database.ContractStatusEnum(*sf.Status), Valid: true},
+		PartySize:     database.IntToPgtype(*sf.PartySize),
+		SortBy:        sf.SortBy,
+	}
+
+	models, err := s.store.ListAvailableContracts(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	contracts := make([]ListContractsResponse, 0, len(models))
+	for _, m := range models {
+		c := ListContractsResponse{
+			ID:             m.ID,
+			Title:          m.Title.String,
+			Difficulty:     m.Difficulty,
+			RecPartySize:   m.RecPartySize,
+			ContractStatus: string(m.ContractStatus),
+		}
+		contracts = append(contracts, c)
+	}
+
+	return contracts, nil
+}
+
+func (s *ContractService) ListGuildContracts(ctx context.Context, guildID uuid.UUID, sf SearchFilters) ([]ListContractsResponse, error) {
+	params := database.ListGuildContractsParams{
+		GuildID:       database.UUIDToPgtype(guildID),
+		MinDifficulty: database.IntToPgtype(*sf.MinDifficulty),
+		MaxDifficulty: database.IntToPgtype(*sf.MaxDifficulty),
+		Status:        database.NullContractStatusEnum{ContractStatusEnum: database.ContractStatusEnum(*sf.Status), Valid: true},
+		SortBy:        sf.SortBy,
 	}
 
 	if params.SortBy == "" {
 		params.SortBy = "title"
 	}
 
-	models, err := s.store.ListContractsWithStatus(ctx, params)
+	models, err := s.store.ListGuildContracts(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 
 	contracts := make([]ListContractsResponse, 0, len(models))
-	for _, model := range models {
+	for _, m := range models {
 		c := ListContractsResponse{
-			ID:               model.ID,
-			Title:            model.Title.String,
-			Difficulty:       model.Difficulty,
-			MinimumPartySize: model.MinimumPartySize,
-			ContractStatus:   string(model.ContractStatus),
+			ID:             m.ID,
+			Title:          m.Title.String,
+			Difficulty:     m.Difficulty,
+			RecPartySize:   m.RecPartySize,
+			ContractStatus: string(m.ContractStatus),
 		}
-
-		contracts = append(contracts, c)
-	}
-
-	return contracts, nil
-
-}
-
-func (s *ContractService) ListContractsWithMinDifficulty(ctx context.Context, request ContractWithDifficultyRequeset) ([]ListContractsResponse, error) {
-	params := database.ListContractsWithMinDifficultyParams{
-		Difficulty: request.Difficulty,
-		GuildID:    database.UUIDToPgtype(request.GuildID),
-		SortBy:     request.SortBy,
-	}
-
-	models, err := s.store.ListContractsWithMinDifficulty(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	contracts := make([]ListContractsResponse, 0, len(models))
-	for _, model := range models {
-		c := ListContractsResponse{
-			ID:               model.ID,
-			Title:            model.Title.String,
-			Difficulty:       model.Difficulty,
-			MinimumPartySize: model.MinimumPartySize,
-			ContractStatus:   string(model.ContractStatus),
-		}
-
 		contracts = append(contracts, c)
 	}
 
 	return contracts, nil
 }
 
-func (s *ContractService) ListContractsWithMaxDifficulty(ctx context.Context, request ContractWithDifficultyRequeset) ([]ListContractsResponse, error) {
-	params := database.ListContractsWithMaxDifficultyParams{
-		Difficulty: request.Difficulty,
-		GuildID:    database.UUIDToPgtype(request.GuildID),
-		SortBy:     request.SortBy,
-	}
-
-	models, err := s.store.ListContractsWithMaxDifficulty(ctx, params)
+func (s *ContractService) GetAvailableContractDetails(ctx context.Context, contractID uuid.UUID) (ContractDetailsResponse, error) {
+	model, err := s.store.GetAvailableContractDetails(ctx, contractID)
 	if err != nil {
-		return nil, err
+		return ContractDetailsResponse{}, err
 	}
 
-	contracts := make([]ListContractsResponse, 0, len(models))
-	for _, model := range models {
-		c := ListContractsResponse{
-			ID:               model.ID,
-			Title:            model.Title.String,
-			Difficulty:       model.Difficulty,
-			MinimumPartySize: model.MinimumPartySize,
-			ContractStatus:   string(model.ContractStatus),
-		}
-
-		contracts = append(contracts, c)
+	contract := ContractDetailsResponse{
+		ID:           model.ID,
+		Title:        model.Title.String,
+		Description:  model.Description.String,
+		Difficulty:   model.Difficulty,
+		RecPartySize: model.RecPartySize,
+		Status:       string(model.ContractStatus),
 	}
 
-	return contracts, nil
+	return contract, nil
+}
+
+func (s *ContractService) GetActiveContractDetails(ctx context.Context, contractID uuid.UUID) (ActiveContractDetailsResponse, error) {
+	model, err := s.store.GetContractDetailsByID(ctx, contractID)
+	if err != nil {
+		return ActiveContractDetailsResponse{}, err
+	}
+
+	contract := ActiveContractDetailsResponse{
+		ID:           model.ID,
+		Title:        model.Title.String,
+		GuildName:    model.GuildName,
+		PartyName:    model.PartyName,
+		PartyStatus:  string(model.PartyStatus),
+		Difficulty:   model.Difficulty,
+		RecPartySize: model.RecPartySize,
+		Description:  model.Description.String,
+		Status:       string(model.ContractStatus),
+	}
+
+	return contract, nil
 }
 
 func (s *ContractService) GetPastContractsWithStatus(ctx context.Context, p PastContractsParams) ([]database.GetPastContractsWithStatusRow, error) {

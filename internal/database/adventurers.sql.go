@@ -156,51 +156,6 @@ func (q *Queries) GetAdventurerUpkeepCost(ctx context.Context, id uuid.UUID) (in
 	return upkeep_cost, err
 }
 
-const getAdventurersByGuild = `-- name: GetAdventurersByGuild :many
-SELECT
-id,
-name,
-current_rank,
-role,
-current_activity
-FROM adventurers
-WHERE guild_id = $1
-`
-
-type GetAdventurersByGuildRow struct {
-	ID              uuid.UUID    `json:"id"`
-	Name            pgtype.Text  `json:"name"`
-	CurrentRank     int32        `json:"current_rank"`
-	Role            RoleEnum     `json:"role"`
-	CurrentActivity ActivityEnum `json:"current_activity"`
-}
-
-func (q *Queries) GetAdventurersByGuild(ctx context.Context, guildID pgtype.UUID) ([]GetAdventurersByGuildRow, error) {
-	rows, err := q.db.Query(ctx, getAdventurersByGuild, guildID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetAdventurersByGuildRow
-	for rows.Next() {
-		var i GetAdventurersByGuildRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.CurrentRank,
-			&i.Role,
-			&i.CurrentActivity,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getAdventurersWithRole = `-- name: GetAdventurersWithRole :many
 SELECT 
 id,
@@ -378,56 +333,6 @@ func (q *Queries) GetGuildMembers(ctx context.Context, arg GetGuildMembersParams
 	return items, nil
 }
 
-const getRecruitableAdventurers = `-- name: GetRecruitableAdventurers :many
-SELECT 
-id,
-name,
-role,
-description,
-current_rank
-FROM adventurers
-WHERE guild_id IS NULL
-ORDER BY
-	CASE WHEN $1::text = 'joined_at' THEN joined_at END ASC,
-	CASE WHEN $1::text = 'name' THEN name END ASC,
-	CASE WHEN $1::text = 'role' THEN role END ASC,
-	CASE WHEN $1::text = 'status' THEN role END ASC
-`
-
-type GetRecruitableAdventurersRow struct {
-	ID          uuid.UUID   `json:"id"`
-	Name        pgtype.Text `json:"name"`
-	Role        RoleEnum    `json:"role"`
-	Description string      `json:"description"`
-	CurrentRank int32       `json:"current_rank"`
-}
-
-func (q *Queries) GetRecruitableAdventurers(ctx context.Context, sortBy string) ([]GetRecruitableAdventurersRow, error) {
-	rows, err := q.db.Query(ctx, getRecruitableAdventurers, sortBy)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetRecruitableAdventurersRow
-	for rows.Next() {
-		var i GetRecruitableAdventurersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Role,
-			&i.Description,
-			&i.CurrentRank,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const insertAdventurerContractHistory = `-- name: InsertAdventurerContractHistory :exec
 INSERT INTO adventurer_contract_history(
 	adventurer_id,
@@ -462,6 +367,144 @@ type InsertAdventurerHistoryParams struct {
 func (q *Queries) InsertAdventurerHistory(ctx context.Context, arg InsertAdventurerHistoryParams) error {
 	_, err := q.db.Exec(ctx, insertAdventurerHistory, arg.AdventurerID, arg.Activity)
 	return err
+}
+
+const listGuildMembers = `-- name: ListGuildMembers :many
+SELECT
+id,
+name,
+current_rank,
+role,
+current_activity
+FROM adventurers
+WHERE guild_id = $1
+AND ($2::text IS NULL OR name = $2)
+AND ($3::role_enum IS NULL OR role = sql.narg('role'))
+AND ($4::int IS NULL OR current_rank <= $4)
+AND ($5::int IS NULL OR current_rank >= $5)
+AND ($6::activity_enum IS NULL OR current_activity = $6)
+ORDER BY
+	CASE WHEN $7::text = 'joined_at' THEN joined_at END ASC,
+	CASE WHEN $7::text = 'name' THEN name END ASC,
+	CASE WHEN $7::text = 'role' THEN role END ASC,
+	CASE WHEN $7::text = 'status' THEN role END ASC
+`
+
+type ListGuildMembersParams struct {
+	GuildID         pgtype.UUID      `json:"guild_id"`
+	Name            pgtype.Text      `json:"name"`
+	Role            NullRoleEnum     `json:"role"`
+	MaxRank         pgtype.Int4      `json:"max_rank"`
+	MinRank         pgtype.Int4      `json:"min_rank"`
+	CurrentActivity NullActivityEnum `json:"current_activity"`
+	SortBy          string           `json:"sort_by"`
+}
+
+type ListGuildMembersRow struct {
+	ID              uuid.UUID    `json:"id"`
+	Name            pgtype.Text  `json:"name"`
+	CurrentRank     int32        `json:"current_rank"`
+	Role            RoleEnum     `json:"role"`
+	CurrentActivity ActivityEnum `json:"current_activity"`
+}
+
+func (q *Queries) ListGuildMembers(ctx context.Context, arg ListGuildMembersParams) ([]ListGuildMembersRow, error) {
+	rows, err := q.db.Query(ctx, listGuildMembers,
+		arg.GuildID,
+		arg.Name,
+		arg.Role,
+		arg.MaxRank,
+		arg.MinRank,
+		arg.CurrentActivity,
+		arg.SortBy,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListGuildMembersRow
+	for rows.Next() {
+		var i ListGuildMembersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CurrentRank,
+			&i.Role,
+			&i.CurrentActivity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRecruitableAdventurers = `-- name: ListRecruitableAdventurers :many
+SELECT 
+id,
+name,
+role,
+current_rank
+FROM adventurers
+WHERE guild_id IS NULL
+AND ($1::text IS NULL OR name = $1)
+AND ($2::role_enum IS NULL OR role = sql.narg('role'))
+AND ($3::int IS NULL OR current_rank <= $3)
+AND ($4::int IS NULL OR current_rank >= $4)
+ORDER BY
+	CASE WHEN $5::text = 'joined_at' THEN joined_at END ASC,
+	CASE WHEN $5::text = 'name' THEN name END ASC,
+	CASE WHEN $5::text = 'role' THEN role END ASC,
+	CASE WHEN $5::text = 'status' THEN role END ASC
+`
+
+type ListRecruitableAdventurersParams struct {
+	Name    pgtype.Text  `json:"name"`
+	Role    NullRoleEnum `json:"role"`
+	MaxRank pgtype.Int4  `json:"max_rank"`
+	MinRank pgtype.Int4  `json:"min_rank"`
+	SortBy  string       `json:"sort_by"`
+}
+
+type ListRecruitableAdventurersRow struct {
+	ID          uuid.UUID   `json:"id"`
+	Name        pgtype.Text `json:"name"`
+	Role        RoleEnum    `json:"role"`
+	CurrentRank int32       `json:"current_rank"`
+}
+
+func (q *Queries) ListRecruitableAdventurers(ctx context.Context, arg ListRecruitableAdventurersParams) ([]ListRecruitableAdventurersRow, error) {
+	rows, err := q.db.Query(ctx, listRecruitableAdventurers,
+		arg.Name,
+		arg.Role,
+		arg.MaxRank,
+		arg.MinRank,
+		arg.SortBy,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListRecruitableAdventurersRow
+	for rows.Next() {
+		var i ListRecruitableAdventurersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Role,
+			&i.CurrentRank,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const setAdventurerActivity = `-- name: SetAdventurerActivity :exec

@@ -10,5 +10,10 @@ CREATE TABLE guilds (
 	current_rank INTEGER NOT NULL DEFAULT 1
 );
 
+CREATE INDEX ix_guild_name ON guilds (name);
+CREATE INDEX ix_guild_rank ON guilds (current_rank);
+
 -- +goose Down
+DROP INDEX ix_guild_name ON guilds (name);
+DROP INDEX ix_guild_rank ON guilds (current_rank);
 DROP TABLE guilds;

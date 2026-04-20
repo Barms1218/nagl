@@ -7,103 +7,62 @@ rec_party_size,
 contract_status
 FROM contracts
 WHERE guild_id IS NULL
-AND($1::int IS NULL OR difficulty <= $1)
-AND($2::int IS NULL OR difficulty >=$2)
-AND($3::contract_status_enum IS NULL OR contract_status = $3)
-AND($4::int IS NULL OR rec_party_size = $4)
+    AND (sqlc.narg('max_difficulty')::int IS NULL OR difficulty <= sqlc.narg('max_difficulty'))
+    AND (sqlc.narg('min_difficulty')::int IS NULL OR difficulty >= sqlc.narg('min_difficulty'))
+    AND (sqlc.narg('status')::contract_status_enum IS NULL OR contract_status = sqlc.narg('status'))
+    AND (sqlc.narg('party_size')::int IS NULL OR rec_party_size = sqlc.narg('party_size'))
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
--- name: ListContractsWithMinDifficulty :many
+-- name: ListGuildContracts :many
 SELECT
-id,
-title,
-difficulty,
-rec_party_size,
-contract_status
+    id,
+    title,
+    difficulty,
+    rec_party_size,
+    contract_status
 FROM contracts
-WHERE difficulty >= $1 AND guild_id = $2
+WHERE guild_id = $1
+    AND (sqlc.narg('max_difficulty')::int IS NULL OR difficulty <= sqlc.narg('max_difficulty'))
+    AND(sqlc.narg('min_difficulty')::int IS NULL OR difficulty >= sqlc.narg('min_difficulty'))
+    AND (sqlc.narg('status')::contract_status_enum IS NULL OR contract_status = sqlc.narg('status'))
+    AND (sqlc.narg('party_size')::int IS NULL OR rec_party_size = sqlc.narg('party_size'))
 ORDER BY
     CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
     CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
 
--- name: ListContractsWithMaxDifficulty :many
+-- name: GetContractDetailsByID :one
 SELECT
+c.id,
+c.title,
+g.name AS guild_name,
+p.name AS party_name,
+p.party_status,
+c.difficulty,
+c.description,
+c.rec_party_size,
+c.contract_status
+FROM contracts c
+JOIN guilds g ON c.guild_id = g.id
+JOIN parties p ON p.contract_id = c.id
+WHERE c.id = $1;
+
+
+-- name: GetAvailableContractDetails :one
+SELECT 
 id,
 title,
-difficulty,
-rec_party_size,
-contract_status
-FROM contracts
-WHERE difficulty <= $1 AND guild_id = $2
-ORDER BY
-    CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
-
--- name: ListContractsWithStatus :many
-SELECT
-id,
-title,
-difficulty,
-rec_party_size,
-contract_status
-FROM contracts
-WHERE contract_status = $1 AND guild_id = $2
-ORDER BY
-    CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
-
--- name: ListContractsWithMinPartySize :many
-SELECT
-id,
-title,
-difficulty,
-rec_party_size,
-contract_status
-FROM contracts
-WHERE rec_party_size >= $1 AND guild_id = $2
-ORDER BY
-    CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
-
--- name: ListContractsWithMaxPartySize :many
-SELECT
-id,
-title,
-difficulty,
-rec_party_size,
-contract_status
-FROM contracts
-WHERE rec_party_size <= $1 AND guild_id = $2
-ORDER BY
-    CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'contract_status' THEN contract_status END ASC,
-    CASE WHEN sqlc.arg(sort_by)::text = 'rec_party_size' THEN rec_party_size END ASC;
-
-
--- name: GetContractByID :one
-SELECT
-id,
-guild_id,
 difficulty,
 description,
 rec_party_size,
 contract_status
 FROM contracts
 WHERE id = $1;
-
-
 
 
 -- name: SetContractStatus :exec

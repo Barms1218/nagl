@@ -7,6 +7,8 @@ import (
 func Routes(service *AdventurerService) chi.Router {
 	r := chi.NewRouter()
 
-	r.Mount("/list_members", ListAdventurers(service))
+	r.Mount("/recruitable", ListRecruitableAdventurers(service))
+	r.Mount("/details/{id}", GetDetails(service))
+	r.Mount("/guild", ListGuildMembers(service))
 	return r
 }

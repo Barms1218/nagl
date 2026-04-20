@@ -9,7 +9,7 @@ CREATE TYPE activity_enum AS ENUM(
 );
 
 CREATE TYPE role_enum AS ENUM(
-	'frontline',
+	'frontliner',
 	'spellcaster',
 	'healer',
 	'generalist'
@@ -39,7 +39,15 @@ CREATE TABLE adventurers (
 	recruitment_cost INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE INDEX ix_ad_rank ON adventurers (current_rank);
+CREATE INDEX ix_ad_activity ON adventurers (current_activity);
+CREATE INDEX ix_ad_activity ON adventurers (role);
+
+
 -- +goose Down
+DROP INDEX ix_ad_rank ON adventurers (current_rank);
+DROP INDEX ix_ad_activity ON adventurers (current_activity);
+DROP INDEX ix_ad_activity ON adventurers (role);
 DROP TYPE rank_enum;
 DROP TYPE activity_enum;
 DROP TYPE role_enum;

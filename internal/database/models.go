@@ -101,10 +101,57 @@ func (ns NullContractStatusEnum) Value() (driver.Value, error) {
 	return string(ns.ContractStatusEnum), nil
 }
 
+type PartyStatusEnum string
+
+const (
+	PartyStatusEnumAvailable PartyStatusEnum = "available"
+	PartyStatusEnumTraining  PartyStatusEnum = "training"
+	PartyStatusEnumFighting  PartyStatusEnum = "fighting"
+	PartyStatusEnumCamping   PartyStatusEnum = "camping"
+	PartyStatusEnumEating    PartyStatusEnum = "eating"
+	PartyStatusEnumTraveling PartyStatusEnum = "traveling"
+	PartyStatusEnumDead      PartyStatusEnum = "dead"
+)
+
+func (e *PartyStatusEnum) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PartyStatusEnum(s)
+	case string:
+		*e = PartyStatusEnum(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PartyStatusEnum: %T", src)
+	}
+	return nil
+}
+
+type NullPartyStatusEnum struct {
+	PartyStatusEnum PartyStatusEnum `json:"party_status_enum"`
+	Valid           bool            `json:"valid"` // Valid is true if PartyStatusEnum is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPartyStatusEnum) Scan(value interface{}) error {
+	if value == nil {
+		ns.PartyStatusEnum, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PartyStatusEnum.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPartyStatusEnum) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PartyStatusEnum), nil
+}
+
 type RoleEnum string
 
 const (
-	RoleEnumFrontline   RoleEnum = "frontline"
+	RoleEnumFrontliner  RoleEnum = "frontliner"
 	RoleEnumSpellcaster RoleEnum = "spellcaster"
 	RoleEnumHealer      RoleEnum = "healer"
 	RoleEnumGeneralist  RoleEnum = "generalist"
@@ -177,16 +224,16 @@ type AdventurerHistory struct {
 }
 
 type Contract struct {
-	ID               uuid.UUID          `json:"id"`
-	GuildID          pgtype.UUID        `json:"guild_id"`
-	Title            pgtype.Text        `json:"title"`
-	Difficulty       int32              `json:"difficulty"`
-	MinimumPartySize int32              `json:"minimum_party_size"`
-	Description      pgtype.Text        `json:"description"`
-	ContractStatus   ContractStatusEnum `json:"contract_status"`
-	Reward           int32              `json:"reward"`
-	CreatedAt        pgtype.Timestamp   `json:"created_at"`
-	UpdatedAt        pgtype.Timestamp   `json:"updated_at"`
+	ID             uuid.UUID          `json:"id"`
+	GuildID        pgtype.UUID        `json:"guild_id"`
+	Title          pgtype.Text        `json:"title"`
+	Difficulty     int32              `json:"difficulty"`
+	RecPartySize   int32              `json:"rec_party_size"`
+	Description    pgtype.Text        `json:"description"`
+	ContractStatus ContractStatusEnum `json:"contract_status"`
+	Reward         int32              `json:"reward"`
+	CreatedAt      pgtype.Timestamp   `json:"created_at"`
+	UpdatedAt      pgtype.Timestamp   `json:"updated_at"`
 }
 
 type ContractHistory struct {
@@ -217,6 +264,7 @@ type Party struct {
 	Name             string           `json:"name"`
 	PartyRank        int32            `json:"party_rank"`
 	MaximumPartySize int32            `json:"maximum_party_size"`
+	PartyStatus      PartyStatusEnum  `json:"party_status"`
 	CreatedAt        pgtype.Timestamp `json:"created_at"`
 }
 

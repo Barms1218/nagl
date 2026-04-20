@@ -31,7 +31,7 @@ func JWTMiddleware(secret *ecdsa.PublicKey) func(http.Handler) http.Handler {
 					return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 				}
 				return secret, nil
-			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+			}, jwt.WithValidMethods([]string{jwt.SigningMethodES256.Alg()}))
 			if err != nil || !token.Valid {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return

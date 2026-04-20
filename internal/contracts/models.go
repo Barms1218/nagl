@@ -6,19 +6,40 @@ import (
 
 // Search parameters for a contract
 type SearchFilters struct {
-	MinDifficulty *int    `json:"min_difficulty" validate:"omitempty,gte=1,lte=5"`
-	MaxDifficulty *int    `json:"max_difficulty" validate:"omitempty,gte=1,lte=5"`
-	PartySize     *int    `json:"partySize" validate:"omitempty,gte=1,lte=5"`
+	MinDifficulty *int32  `json:"min_difficulty" validate:"omitempty,gte=1,lte=5"`
+	MaxDifficulty *int32  `json:"max_difficulty" validate:"omitempty,gte=1,lte=5"`
+	PartySize     *int32  `json:"partySize" validate:"omitempty,gte=1,lte=5"`
 	Status        *string `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
 	SortBy        string  `json:"sortBy" validate:"oneof=title difficulty minimum_party_size contract_status"`
 }
 
 type ListContractsResponse struct {
-	ID               uuid.UUID `json:"contract_id"`
-	Title            string    `json:"title"`
-	Difficulty       int32     `json:"difficulty"`
-	MinimumPartySize int32     `json:"minimum_party_size" validate:"gte=1,lte=5"`
-	ContractStatus   string    `json:"contract_status"`
+	ID             uuid.UUID `json:"contract_id"`
+	Title          string    `json:"title"`
+	Difficulty     int32     `json:"difficulty"`
+	RecPartySize   int32     `json:"minimum_party_size" validate:"gte=1,lte=5"`
+	ContractStatus string    `json:"contract_status"`
+}
+
+type ActiveContractDetailsResponse struct {
+	ID           uuid.UUID `json:"contract_id"`
+	Title        string    `json:"title"`
+	GuildName    string    `json:"guild_name"`
+	PartyName    string    `json:"party_name"`
+	PartyStatus  string    `json:"party_status"`
+	Description  string    `json:"description"`
+	Difficulty   int32     `json:"difficulty"`
+	RecPartySize int32     `json:"rec_party_size"`
+	Status       string    `json:"status"`
+}
+
+type ContractDetailsResponse struct {
+	ID           uuid.UUID `json:"contract_id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Difficulty   int32     `json:"difficulty"`
+	RecPartySize int32     `json:"rec_party_size"`
+	Status       string    `json:"status"`
 }
 
 // Parameters for the history of a contract

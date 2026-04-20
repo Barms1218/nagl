@@ -3,30 +3,30 @@ package adventurers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/Barms1218/nagl/internal/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"net/http"
-	"time"
 )
 
 type AdventurerLister interface {
-	ListRecruitableAdventurers(ctx context.Context, filters SearchFilters) ([]ListAdventurersResponse, error)
+	ListRecruitableAdventurers(ctx context.Context, request GetMembersRequest) ([]ListAdventurersResponse, error)
 }
 
-func ListRecruitableAdventurers(s AdventurerLister) http.HandlerFunc {
+func ListAdventurers(s AdventurerLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		var filters SearchFilters
-		if err := json.NewDecoder(r.Body).Decode(&filters); err != nil {
+		var request GetMembersRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 			http.Error(w, "Invalid Request Body", http.StatusBadRequest)
 			return
 		}
 
-		members, err := s.ListRecruitableAdventurers(ctx, filters)
+		members, err := s.ListAdventurers(ctx, request)
 		if err != nil {
 			http.Error(w, "Request Failed: %w", http.StatusInternalServerError)
 			return
@@ -42,10 +42,10 @@ func ListRecruitableAdventurers(s AdventurerLister) http.HandlerFunc {
 }
 
 type GuildLister interface {
-	ListGuildMembers(ctx context.Context, guildID uuid.UUID, filters GuildMemberFilters) ([]ListMembersResponse, error)
+	GetAdventurersByGuild(ctx context.Context, guildID uuid.UUID) ([]ListAdventurersResponse, error)
 }
 
-func ListGuildMembers(g GuildLister) http.HandlerFunc {
+func ListByGuild(g GuildLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -56,13 +56,36 @@ func ListGuildMembers(g GuildLister) http.HandlerFunc {
 			return
 		}
 
-		var filters GuildMemberFilters
-		if err := json.NewDecoder(r.Body).Decode(filters); err != nil {
-			http.Error(w, fmt.Sprintf("Bad Reuest Body: %w", err), http.StatusInternalServerError)
+		adventurers, err := g.GetAdventurersByGuild(ctx, guildID)
+		if err != nil {
+			http.Error(w, "Adventurer list failed: %w", http.StatusInternalServerError)
+		}
+
+		if err := json.NewEncoder(w).Encode(adventurers); err != nil {
+			http.Error(w, "JSON Encoding Error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+type StatusLister interface {
+	GetAdventurersWithStatus(ctx context.Context, request AdventurersWithStatusRequest) ([]GetAdventurersResponse, error)
+}
+
+func ListByStatus(s StatusLister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		var request AdventurersWithStatusRequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			http.Error(w, "Bad Request Body", http.StatusBadRequest)
 			return
 		}
 
-		adventurers, err := g.ListGuildMembers(ctx, guildID, filters)
+		adventurers, err := s.GetAdventurersWithStatus(ctx, request)
 		if err != nil {
 			http.Error(w, "Adventurer list failed: %w", http.StatusInternalServerError)
 		}

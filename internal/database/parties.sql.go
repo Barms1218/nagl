@@ -74,7 +74,7 @@ func (q *Queries) CountMemberCompleteContracts(ctx context.Context, contractID u
 const createParty = `-- name: CreateParty :one
 INSERT INTO parties (guild_id, contract_id, name)
 VALUES($1, $2, $3)
-RETURNING id, contract_id, guild_id, name, party_rank, maximum_party_size, created_at
+RETURNING id, contract_id, guild_id, name, party_rank, maximum_party_size, party_status, created_at
 `
 
 type CreatePartyParams struct {
@@ -93,6 +93,7 @@ func (q *Queries) CreateParty(ctx context.Context, arg CreatePartyParams) (Party
 		&i.Name,
 		&i.PartyRank,
 		&i.MaximumPartySize,
+		&i.PartyStatus,
 		&i.CreatedAt,
 	)
 	return i, err

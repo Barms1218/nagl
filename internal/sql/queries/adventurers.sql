@@ -1,12 +1,15 @@
--- name: GetRecruitableAdventurers :many
+-- name: ListRecruitableAdventurers :many
 SELECT 
 id,
 name,
 role,
-description,
 current_rank
 FROM adventurers
 WHERE guild_id IS NULL
+AND (sqlc.narg('name')::text IS NULL OR name = sqlc.narg('name'))
+AND (sqlc.narg('role')::role_enum IS NULL OR role = sql.narg('role'))
+AND (sqlc.narg('max_rank')::int IS NULL OR current_rank <= sqlc.narg('max_rank'))
+AND (sqlc.narg('min_rank')::int IS NULL OR current_rank >= sqlc.narg('min_rank'))
 ORDER BY
 	CASE WHEN sqlc.arg(sort_by)::text = 'joined_at' THEN joined_at END ASC,
 	CASE WHEN sqlc.arg(sort_by)::text = 'name' THEN name END ASC,
@@ -14,7 +17,7 @@ ORDER BY
 	CASE WHEN sqlc.arg(sort_by)::text = 'status' THEN role END ASC;
 
 
--- name: GetAdventurersByGuild :many
+-- name: ListGuildMembers :many
 SELECT
 id,
 name,
@@ -22,7 +25,17 @@ current_rank,
 role,
 current_activity
 FROM adventurers
-WHERE guild_id = $1;
+WHERE guild_id = $1
+AND (sqlc.narg('name')::text IS NULL OR name = sqlc.narg('name'))
+AND (sqlc.narg('role')::role_enum IS NULL OR role = sql.narg('role'))
+AND (sqlc.narg('max_rank')::int IS NULL OR current_rank <= sqlc.narg('max_rank'))
+AND (sqlc.narg('min_rank')::int IS NULL OR current_rank >= sqlc.narg('min_rank'))
+AND (sqlc.narg('current_activity')::activity_enum IS NULL OR current_activity = sqlc.narg('current_activity'))
+ORDER BY
+	CASE WHEN sqlc.arg(sort_by)::text = 'joined_at' THEN joined_at END ASC,
+	CASE WHEN sqlc.arg(sort_by)::text = 'name' THEN name END ASC,
+	CASE WHEN sqlc.arg(sort_by)::text = 'role' THEN role END ASC,
+	CASE WHEN sqlc.arg(sort_by)::text = 'status' THEN role END ASC;
 
 -- name: GetAdventurerDetails :one
 SELECT

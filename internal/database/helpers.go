@@ -17,3 +17,11 @@ func PgTypeToUUID(id pgtype.UUID) uuid.UUID {
 
 	return gUUID
 }
+
+func IntToPgtype(n int32) pgtype.Int4 {
+	return pgtype.Int4{Int32: n, Valid: true}
+}
+
+func StringToPgtype(s string) pgtype.Text {
+	return pgtype.Text{String: s, Valid: true}
+}

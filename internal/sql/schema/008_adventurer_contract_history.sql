@@ -7,5 +7,12 @@ CREATE TABLE adventurer_contract_history (
 	occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX ix_adventurer_id ON adventurer_contract_history (adventurer_id);
+CREATE INDEX ix_contract_id ON adventurer_contract_history (contract_id);
+CREATE INDEX ix_conract_status ON adventurer_contract_history (status);
+
 -- +goose Down
+DROP INDEX ix_adventurer_id ON adventurer_contract_history (adventurer_id);
+DROP INDEX ix_contract_id ON adventurer_contract_history (contract_id);
+DROP INDEX ix_conract_status ON adventurer_contract_history (status);
 DROP TABLE adventurer_contract_history;

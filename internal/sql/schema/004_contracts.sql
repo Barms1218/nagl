@@ -20,6 +20,17 @@ CREATE TABLE contracts (
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX ix_contract_title ON contracts (title);
+CREATE INDEX ix_contract_diff ON contracts (difficulty);
+CREATE INDEX ix_contract_size ON contracts (rec_party_size);
+CREATE INDEX ix_contract_size ON contracts (contract_status);
+CREATE INDEX ix_contract_reward ON contracts (reward);
+
 -- +goose Down
+DROP INDEX ix_contract_title ON contracts (title);
+DROP INDEX ix_contract_diff ON contracts (difficulty);
+DROP INDEX ix_contract_size ON contracts (rec_party_size);
+DROP INDEX ix_contract_size ON contracts (contract_status);
+DROP INDEX ix_contract_reward ON contracts (reward);
 DROP TYPE contract_status_enum;
 DROP TABLE contracts;

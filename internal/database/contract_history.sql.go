@@ -211,8 +211,7 @@ ORDER BY
 	CASE WHEN $3::text = 'title' THEN title END ASC,
 	CASE WHEN $3::text = 'difficulty' THEN difficulty END ASC,
 	CASE WHEN $3::text = 
-		'rec:w
-		_party_size' THEN minimum_party_size END ASC
+		'rec_party_size' THEN minimum_party_size END ASC
 `
 
 type GetPastContractsMinDifficultyParams struct {

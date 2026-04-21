@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"net/http"
-	"os"
-
+	"errors"
 	"github.com/Barms1218/nagl/internal/adventurers"
 	"github.com/Barms1218/nagl/internal/app"
-
-	"log"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Barms1218/nagl/internal/contracts"
 	"github.com/Barms1218/nagl/internal/database"
@@ -19,6 +20,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
+	"time"
 )
 
 func main() {
@@ -51,5 +54,30 @@ func main() {
 
 	r := app.Routes()
 
-	http.ListenAndServe(":3000", r)
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("HTTP server error", "Error", err)
+			os.Exit(1)
+		}
+	}()
+
+	<-ctx.Done()
+
+	shuwdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shuwdownCtx); err != nil {
+		slog.Error("Graceful shutdown failed", "Error:", err)
+		os.Exit(1)
+	}
+	log.Println("Closing database connection...")
+	log.Println("Shutdown complete. Goodbye!")
 }

@@ -37,7 +37,7 @@ type ContractDetailsResponse struct {
 	ID           uuid.UUID `json:"contract_id"`
 	Title        string    `json:"title"`
 	Description  string    `json:"description"`
-	Difficulty   int32     `json:"difficulty"`
+	Difficulty   string    `json:"difficulty"`
 	RecPartySize int32     `json:"rec_party_size"`
 	Status       string    `json:"status"`
 }

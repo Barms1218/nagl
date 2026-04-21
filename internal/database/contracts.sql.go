@@ -148,6 +148,49 @@ func (q *Queries) GetPartyOnContract(ctx context.Context, contractID pgtype.UUID
 	return i, err
 }
 
+const insertContract = `-- name: InsertContract :one
+INSERT INTO contracts (
+    title,
+    difficulty,
+    rec_party_size,
+    description,
+    reward
+) VALUES ($1, $2, $3, $4, $5)
+RETURNING id, guild_id, title, difficulty, rec_party_size, description, contract_status, reward, created_at, updated_at
+`
+
+type InsertContractParams struct {
+	Title        pgtype.Text `json:"title"`
+	Difficulty   int32       `json:"difficulty"`
+	RecPartySize int32       `json:"rec_party_size"`
+	Description  pgtype.Text `json:"description"`
+	Reward       int32       `json:"reward"`
+}
+
+func (q *Queries) InsertContract(ctx context.Context, arg InsertContractParams) (Contract, error) {
+	row := q.db.QueryRow(ctx, insertContract,
+		arg.Title,
+		arg.Difficulty,
+		arg.RecPartySize,
+		arg.Description,
+		arg.Reward,
+	)
+	var i Contract
+	err := row.Scan(
+		&i.ID,
+		&i.GuildID,
+		&i.Title,
+		&i.Difficulty,
+		&i.RecPartySize,
+		&i.Description,
+		&i.ContractStatus,
+		&i.Reward,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listAvailableContracts = `-- name: ListAvailableContracts :many
 SELECT
 id,

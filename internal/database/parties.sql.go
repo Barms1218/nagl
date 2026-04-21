@@ -36,7 +36,7 @@ JOIN contracts c ON ach.contract_id = c.id
 WHERE ach.contract_id = $1
 AND c.difficulty >= a.current_rank
 AND ach.status = 'complete'
-GROUP BY ach.adventurer_id, a.name
+GROUP BY ach.adventurer_id, a.name, a.current_rank
 `
 
 type CountMemberCompleteContractsRow struct {

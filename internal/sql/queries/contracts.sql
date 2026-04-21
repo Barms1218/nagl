@@ -94,3 +94,12 @@ WHERE ph.party_id = $1
 AND ph.contract_status = 'complete'
 AND c.difficulty >= p.party_rank;
 
+-- name: InsertContract :one
+INSERT INTO contracts (
+    title,
+    difficulty,
+    rec_party_size,
+    description,
+    reward
+) VALUES ($1, $2, $3, $4, $5)
+RETURNING *;

@@ -141,7 +141,7 @@ func (s *ContractService) GetAvailableContractDetails(ctx context.Context, contr
 		ID:           model.ID,
 		Title:        model.Title.String,
 		Description:  model.Description.String,
-		Difficulty:   model.Difficulty,
+		Difficulty:   GetDifficultyString(model.Difficulty),
 		RecPartySize: model.RecPartySize,
 		Status:       string(model.ContractStatus),
 	}
@@ -300,4 +300,23 @@ func (s *ContractService) HandlePartyProgression(
 	}
 
 	return nil
+}
+
+func GetDifficultyString(difficulty int32) string {
+	var diffString string
+	switch difficulty := 1; difficulty {
+	case 1:
+		diffString = "Common"
+	case 2:
+		diffString = "Challening"
+	case 3:
+		diffString = "Dangerous"
+	case 4:
+		diffString = "Deadly"
+	case 5:
+		diffString = "Fatal"
+	default:
+		diffString = ""
+	}
+	return diffString
 }

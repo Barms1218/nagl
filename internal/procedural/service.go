@@ -175,7 +175,7 @@ func (s *ProceduralService) CreateContractPrompt(ctx context.Context) (string, e
 }
 
 func (s *ProceduralService) PromptForContract(ctx context.Context) (*anthropic.Message, error) {
-	systemPrompt, err := s.CreateAdventurerPrompt(ctx)
+	systemPrompt, err := s.CreateContractPrompt(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (s *ProceduralService) GenerateContract(ctx context.Context) (GeneratedCont
 	}, nil
 }
 
-func (s *ProceduralService) GeneratePartyName(ctx context.Context, r GeneratePartyRequest) (GeneratedParty, error) {
+func (s *ProceduralService) GenerateParty(ctx context.Context, r GeneratePartyRequest) (GeneratedParty, error) {
 
 	partyJSON, err := json.Marshal(r)
 	if err != nil {

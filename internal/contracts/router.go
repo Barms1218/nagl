@@ -13,6 +13,7 @@ func Routes(service *ContractService) http.Handler {
 	r.Get("/available", ListAvailableContracts(service))
 	r.Get("/view_active/{id}", GetActiveContractDetails(service))
 	r.Get("/view_available/{id}", GetAvailableContractDetails(service))
+	r.Patch("/update", UpdateContract(service))
 
 	return r
 }

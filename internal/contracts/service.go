@@ -251,6 +251,7 @@ func (s *ContractService) HandlePartyProgression(
 	cs SetContractStatusRequest) error {
 
 	partyHistoryParams := database.InsertPartyHistoryParams{
+		ContractID:     cs.ID,
 		PartyID:        cs.PartyID,
 		ContractStatus: database.ContractStatusEnum(cs.NewStatus),
 	}
@@ -278,12 +279,12 @@ func (s *ContractService) HandlePartyProgression(
 		Status:     database.ContractStatusEnum(cs.NewStatus),
 	}
 
-	err = q.InsertMemberContractHistory(ctx, partyContractParams)
+	adventurerIds, err := q.InsertMemberContractHistory(ctx, partyContractParams)
 	if err != nil {
 		return fmt.Errorf("Error occurred updating party history: %w", err)
 	}
 
-	memberMetrics, err := q.CountMemberCompleteContracts(ctx, cs.ID)
+	memberMetrics, err := q.CountMemberCompleteContracts(ctx, cs.PartyID)
 	if err != nil {
 		return fmt.Errorf("Error occurred during party member progression: %w", err)
 	}

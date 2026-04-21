@@ -45,7 +45,7 @@ func (a *App) Routes() chi.Router {
 		r.Use(auth.JWTMiddleware(&a.privateKey.PublicKey))
 		r.Mount("/contracts", contracts.Routes(a.contractService))
 		r.Mount("/generate", procedural.Routes(a.proceduralService))
-		r.Mount("adventurers", adventurers.Routes(a.adventurerService))
+		r.Mount("/adventurers", adventurers.Routes(a.adventurerService))
 	})
 
 	return r

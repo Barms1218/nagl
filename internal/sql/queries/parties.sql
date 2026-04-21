@@ -70,13 +70,13 @@ SELECT ach.adventurer_id, a.name, a.current_rank, COUNT(*) AS completed_count
 FROM adventurer_contract_history ach
 JOIN adventurers a ON a.id = ach.adventurer_id
 JOIN contracts c ON ach.contract_id = c.id
-WHERE ach.contract_id = $1
+WHERE ach.adventurer_id = $1
 AND c.difficulty >= a.current_rank
 AND ach.status = 'complete'
 GROUP BY ach.adventurer_id, a.name, a.current_rank;
 
 
--- name: InsertMemberContractHistory :exec
+-- name: InsertMemberContractHistory :many
 INSERT INTO adventurer_contract_history(
 adventurer_id,
 contract_id,
@@ -88,7 +88,8 @@ c.id,
 $2
 FROM adventurers a
 JOIN parties p ON a.party_id = p.id
-WHERE p.contract_id = $1;
+WHERE p.contract_id = $1
+RETURNING adventurer_id;
 
 -- name: RemovePartyFromContract :exec
 UPDATE parties

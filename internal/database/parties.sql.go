@@ -33,7 +33,7 @@ SELECT ach.adventurer_id, a.name, a.current_rank, COUNT(*) AS completed_count
 FROM adventurer_contract_history ach
 JOIN adventurers a ON a.id = ach.adventurer_id
 JOIN contracts c ON ach.contract_id = c.id
-WHERE ach.contract_id = $1
+WHERE ach.adventurer_id = $1
 AND c.difficulty >= a.current_rank
 AND ach.status = 'complete'
 GROUP BY ach.adventurer_id, a.name, a.current_rank
@@ -46,8 +46,8 @@ type CountMemberCompleteContractsRow struct {
 	CompletedCount int64       `json:"completed_count"`
 }
 
-func (q *Queries) CountMemberCompleteContracts(ctx context.Context, contractID uuid.UUID) ([]CountMemberCompleteContractsRow, error) {
-	rows, err := q.db.Query(ctx, countMemberCompleteContracts, contractID)
+func (q *Queries) CountMemberCompleteContracts(ctx context.Context, adventurerID uuid.UUID) ([]CountMemberCompleteContractsRow, error) {
+	rows, err := q.db.Query(ctx, countMemberCompleteContracts, adventurerID)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (q *Queries) GetPartyDetails(ctx context.Context, id uuid.UUID) ([]GetParty
 	return items, nil
 }
 
-const insertMemberContractHistory = `-- name: InsertMemberContractHistory :exec
+const insertMemberContractHistory = `-- name: InsertMemberContractHistory :many
 INSERT INTO adventurer_contract_history(
 adventurer_id,
 contract_id,
@@ -259,6 +259,7 @@ $2
 FROM adventurers a
 JOIN parties p ON a.party_id = p.id
 WHERE p.contract_id = $1
+RETURNING adventurer_id
 `
 
 type InsertMemberContractHistoryParams struct {
@@ -266,9 +267,24 @@ type InsertMemberContractHistoryParams struct {
 	Status     ContractStatusEnum `json:"status"`
 }
 
-func (q *Queries) InsertMemberContractHistory(ctx context.Context, arg InsertMemberContractHistoryParams) error {
-	_, err := q.db.Exec(ctx, insertMemberContractHistory, arg.ContractID, arg.Status)
-	return err
+func (q *Queries) InsertMemberContractHistory(ctx context.Context, arg InsertMemberContractHistoryParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, insertMemberContractHistory, arg.ContractID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var adventurer_id uuid.UUID
+		if err := rows.Scan(&adventurer_id); err != nil {
+			return nil, err
+		}
+		items = append(items, adventurer_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const insertPartyHistory = `-- name: InsertPartyHistory :exec

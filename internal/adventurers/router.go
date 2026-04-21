@@ -11,5 +11,6 @@ func Routes(service *AdventurerService) chi.Router {
 	r.Get("/details/{id}", GetDetails(service))
 	r.Get("/guild", ListGuildMembers(service))
 	r.Get("/salary/{id}", GetUpkeepCost(service))
+	r.Patch("/hire/{id}", HireAdventurer(service))
 	return r
 }

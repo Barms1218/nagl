@@ -64,7 +64,7 @@ func (s *AdventurerService) GetAdventurerDetails(ctx context.Context, id uuid.UU
 	response := DetailsResponse{
 		PartyID:         database.PgTypeToUUID(model.PartyID),
 		Name:            model.Name.String,
-		CurrentRank:     int(model.CurrentRank),
+		CurrentRank:     GetRankString(int(model.CurrentRank)),
 		Role:            string(model.Role),
 		UpkeepCost:      int(model.UpkeepCost),
 		CurrentActivity: string(model.CurrentActivity),
@@ -128,4 +128,24 @@ func (s *AdventurerService) ListGuildMembers(ctx context.Context, guildID uuid.U
 
 func (s *AdventurerService) GetUpkeepCost(ctx context.Context, adventurerID uuid.UUID) (int32, error) {
 	return s.store.GetAdventurerUpkeepCost(ctx, adventurerID)
+}
+
+func GetRankString(rank int) string {
+	var rankString string
+	switch rank {
+	case 1:
+		rankString = "Iron"
+	case 2:
+		rankString = "Bronze"
+	case 3:
+		rankString = "Silver"
+	case 4:
+		rankString = "Gold"
+	case 5:
+		rankString = "Diamond"
+	default:
+		rankString = ""
+
+	}
+	return rankString
 }

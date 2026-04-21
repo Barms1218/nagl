@@ -99,3 +99,4 @@ WHERE id = $1;
 Update parties
 SET contract_id = $2
 WHERE id = $1;
+

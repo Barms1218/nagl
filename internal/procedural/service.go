@@ -242,9 +242,68 @@ func (s *ProceduralService) GenerateContract(ctx context.Context) (GeneratedCont
 	}, nil
 }
 
+func (s *ProceduralService) GeneratePartyName(ctx context.Context, r GeneratePartyRequest) (GeneratedParty, error) {
+
+	partyJSON, err := json.Marshal(r)
+	if err != nil {
+		return GeneratedParty{}, fmt.Errorf("Failed to serialize party info: %w", err)
+	}
+	systemPrompt := fmt.Sprintf(`You are a fantasy guild party manager. Generate a name for a party of fantasy adventurers. Respond with ONLY valid JSON, no mardown, no exaplanation. Use this exact shape:
+	{
+		"guild_id", "uuid.UUID" (The guild that the adventurers are a part of),
+		"name" "string" (Should be considered based on adventurer roles and current_ranks)
+	}
+	The party details are as follows: %s`, string(partyJSON))
+
+	message, err := s.client.Messages.New(ctx, anthropic.MessageNewParams{
+		Model:     anthropic.ModelClaudeSonnet4_6,
+		MaxTokens: 512,
+		System: []anthropic.TextBlockParam{
+			{Text: systemPrompt},
+		},
+		Messages: []anthropic.MessageParam{
+			anthropic.NewUserMessage(
+				anthropic.NewTextBlock("Generate a new party name."),
+			),
+		},
+	})
+	if err != nil {
+		return GeneratedParty{}, err
+	}
+
+	var raw string
+	for _, block := range message.Content {
+		if block.Type == "text" {
+			raw = block.Text
+			break
+		}
+	}
+	if raw == "" {
+		return GeneratedParty{}, err
+	}
+
+	var request GeneratedParty
+	if err := json.Unmarshal([]byte(raw), &request); err != nil {
+		return GeneratedParty{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, raw)
+	}
+
+	params := database.CreatePartyParams{
+		GuildID: r.GuildID,
+		Name:    request.PartyName,
+	}
+	inserted, err := s.store.CreateParty(ctx, params)
+
+	return GeneratedParty{
+		GuildName:    r.GuildName,
+		PartyName:    request.PartyName,
+		PartyStatus:  string(inserted.PartyStatus),
+		MaxPartySize: inserted.MaximumPartySize,
+	}, nil
+}
+
 func GetDifficultyString(difficulty int32) string {
 	var diffString string
-	switch difficulty := 1; difficulty {
+	switch difficulty {
 	case 1:
 		diffString = "Common"
 	case 2:
@@ -263,7 +322,7 @@ func GetDifficultyString(difficulty int32) string {
 
 func GetRankString(rank int) string {
 	var rankString string
-	switch rank := 1; rank {
+	switch rank {
 	case 1:
 		rankString = "Iron"
 	case 2:

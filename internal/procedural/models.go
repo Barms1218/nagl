@@ -38,3 +38,22 @@ type ContractRequest struct {
 	Description  string `json:"description"`
 	Reward       int    `json:"reward"`
 }
+
+type GeneratedParty struct {
+	GuildName    string `json:"guild_name"`
+	PartyName    string `json:"party_name"`
+	MaxPartySize int32  `json:"max_party_size"`
+	PartyStatus  string `json:"party_status"`
+}
+
+type GeneratePartyRequest struct {
+	GuildID     uuid.UUID     `json:"guild_id"`
+	GuildName   string        `json:"guild_name"`
+	Adventurers []PartyMember `json:"adventurers"`
+}
+
+type PartyMember struct {
+	Name string `json:"name"`
+	Role string `json:"role"`
+	Rank int    `json:"rank"`
+}

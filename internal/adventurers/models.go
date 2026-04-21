@@ -75,7 +75,7 @@ type AdventurerDetailsRequest struct {
 	ID              uuid.UUID `json:"adventurer_id"`
 	PartyID         uuid.UUID `json:"party_id"`
 	Name            string    `json:"name"`
-	CurrentRank     int       `json:"current_rank"`
+	CurrentRank     string    `json:"current_rank"`
 	Role            string    `json:"role"`
 	CurrentActivity string    `json:"current_activity"`
 	UpkeepCost      int       `json:"upkeep_cost"`
@@ -85,7 +85,7 @@ type DetailsResponse struct {
 	ID              uuid.UUID `json:"adventurer_id"`
 	PartyID         uuid.UUID `json:"party_id"`
 	Name            string    `json:"name"`
-	CurrentRank     int       `json:"current_rank"`
+	CurrentRank     string    `json:"current_rank"`
 	Role            string    `json:"role"`
 	CurrentActivity string    `json:"current_activity"`
 	UpkeepCost      int       `json:"upkeep_cost"`

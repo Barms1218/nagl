@@ -304,7 +304,7 @@ func (s *ContractService) HandlePartyProgression(
 
 func GetDifficultyString(difficulty int32) string {
 	var diffString string
-	switch difficulty := 1; difficulty {
+	switch difficulty {
 	case 1:
 		diffString = "Common"
 	case 2:

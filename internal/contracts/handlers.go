@@ -96,11 +96,11 @@ func ListAvailableContracts(s AvailableContractLister) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(contracts); err != nil {
 			http.Error(w, "JSON Encoding error", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
 	}
 }
 

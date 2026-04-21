@@ -71,8 +71,7 @@ ORDER BY
 	CASE WHEN sqlc.arg(sort_by)::text = 'title' THEN title END ASC,
 	CASE WHEN sqlc.arg(sort_by)::text = 'difficulty' THEN difficulty END ASC,
 	CASE WHEN sqlc.arg(sort_by)::text = 
-		'rec:w
-		_party_size' THEN minimum_party_size END ASC;
+		'rec_party_size' THEN minimum_party_size END ASC;
 
 -- name: GetPastContractsMaxDifficulty :many
 SELECT 

@@ -13,7 +13,7 @@ CREATE INDEX ix_contract_history_guild ON contract_history (guild_id);
 CREATE INDEX ix_contract_history_party ON contract_history (party_id);
 CREATE INDEX ix_contract_history ON contract_history (contract_id);
 CREATE INDEX ix_contract_history_diff ON contract_history (difficulty);
-CREATE INDEX ix_contract_history_status ON contract_hsitory (status);
+CREATE INDEX ix_contract_history_status ON contract_history (status);
 
 -- +goose Down
 
@@ -21,5 +21,5 @@ DROP INDEX ix_contract_history_guild ON contract_history (guild_id);
 DROP INDEX ix_contract_history_party ON contract_history (party_id);
 DROP INDEX ix_contract_history ON contract_history (contract_id);
 DROP INDEX ix_contract_history_diff ON contract_history (difficulty);
-DROP INDEX ix_contract_history_status ON contract_hsitory (status);
+DROP INDEX ix_contract_history_status ON contract_history (status);
 DROP TABLE contract_history;

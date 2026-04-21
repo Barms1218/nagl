@@ -33,7 +33,6 @@ func ListRecruitableAdventurers(s AdventurerLister) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(members); err != nil {
 			http.Error(w, "JSON Encoding error: %w", http.StatusInternalServerError)
 			return
@@ -67,12 +66,11 @@ func ListGuildMembers(g GuildLister) http.HandlerFunc {
 			http.Error(w, "Adventurer list failed: %w", http.StatusInternalServerError)
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(adventurers); err != nil {
 			http.Error(w, "JSON Encoding Error", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -105,7 +103,6 @@ func GetDetails(s DetailsGetter) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(details); err != nil {
 			http.Error(w, "JSON Encoding error", http.StatusInternalServerError)
 			return

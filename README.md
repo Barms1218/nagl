@@ -14,6 +14,9 @@
 * **Persistent Storage:** Full PostgreSQL integration for guild data, adventurers, and contracts.
 * **JWT Authentication:** Secure access using ECDSA-signed tokens
 * **Procedural Generation:** Anthropic SDK for procedural generation of adventurers, contracts, and party names.
+* **Complex Simulation Logic:** Manages party and individual progression through ACID-compliant PostgreSQL transactions.
+* **Dynamic Conctract Lifestyle:** Handles the full flow from procedural generation and claiming to completion or failure with "Party Fate" calculations.
+* **Advanced Filtering:** Flexible listing service for adventurers and contracts using multi-parameter search filters.
 
 ## Prerequisites
 * **Go:** (version 1.21 or higher recommended)
@@ -57,6 +60,25 @@ go mod tidy
 go run main.go
 ```
 **Note:** This project requires an `ANTHROPIC_API_KEY` set in your environment variables to enable procedural generation.
+
+## Engineering Decisions
+* PostgreSQL was chosen for its flexibility and speed. The ability to create type-safe enums was also a big factor.
+* Chi was selected because the Go standard library is already excellent. Chi was used because it doesn't interfere with that strength.
+* The Anthropic SDK was chosen for procedural generation due to Claude's strength in creative writing.
+
+**Example of a prompt to Anthropic SDK**
+```
+	systemPrompt := fmt.Sprintf(`You are a fantasy adventurer record keeper. Generate an adventurer profile as JSON. Respond with ONLY valid JSON, no markdown, no explanation. Use this exact shape:
+	{
+		"name": "string",
+		"role": "frontliner" | "spellcaster" | "healer" | "generalist",
+		"current_rank": 1-5,
+		"description": "string (2-3 sentences of flavor text)",
+		"upkeep_cost": 10-100,
+		"recruitment_cost": 50-(100 * current_rank)
+	}
+	The following adventurers already exist. Do not repeat their names, and avoid generating a duplicate combination of role and rank: %s`, string(exclusionJSON))
+```
 
 ## Roadmap
 * [ ] **Seed Database:** Add starting adventurers and contracts.

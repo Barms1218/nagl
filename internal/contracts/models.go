@@ -58,10 +58,11 @@ type PastContractsParams struct {
 
 // Parameters to set a particular contract to a particular status
 type SetContractStatusRequest struct {
-	GuildID   uuid.UUID `json:"guild_id"`
-	ID        uuid.UUID `json:"id"`
-	PartyID   uuid.UUID `json:"party_id"`
-	NewStatus string    `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
+	GuildID    uuid.UUID `json:"guild_id"`
+	ID         uuid.UUID `json:"id"`
+	PartyID    uuid.UUID `json:"party_id"`
+	NewStatus  string    `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
+	Difficulty int32     `json:"difficulty" validate:"gte=1,lte=5"`
 }
 
 type ContractClaimRequest struct {

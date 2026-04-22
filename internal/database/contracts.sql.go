@@ -45,6 +45,34 @@ func (q *Queries) CountPartyCompleteContracts(ctx context.Context, partyID uuid.
 	return count, err
 }
 
+const getAdventurersOnContract = `-- name: GetAdventurersOnContract :many
+SELECT
+a.id
+FROM adventurers a
+JOIN parties p ON a.party_id = p.id
+WHERE p.contract_id = $1
+`
+
+func (q *Queries) GetAdventurersOnContract(ctx context.Context, contractID pgtype.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, getAdventurersOnContract, contractID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAvailableContractDetails = `-- name: GetAvailableContractDetails :one
 SELECT 
 id,

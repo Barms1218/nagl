@@ -233,6 +233,7 @@ func (s *ContractService) RecordContractStatus(
 		GuildID:    cs.GuildID,
 		ContractID: cs.ID,
 		PartyID:    cs.PartyID,
+		Difficulty: cs.Difficulty,
 		Status:     database.ContractStatusEnum(cs.NewStatus),
 	}); err != nil {
 		return fmt.Errorf("Error occurred when updating contract history: %w", err)
@@ -284,16 +285,16 @@ func (s *ContractService) HandlePartyProgression(
 		return fmt.Errorf("Error occurred updating party history: %w", err)
 	}
 
-	memberMetrics, err := q.CountMemberCompleteContracts(ctx, cs.PartyID)
-	if err != nil {
-		return fmt.Errorf("Error occurred during party member progression: %w", err)
-	}
-
-	for _, member := range memberMetrics {
-		if member.CompletedCount > 0 && member.CompletedCount%5 == 0 && member.CurrentRank < 5 {
+	for i := range adventurerIds {
+		memberMetrics, err := q.CountMemberCompleteContracts(ctx, adventurerIds[i])
+		if err != nil {
+			return fmt.Errorf("Error occurred during party member progression: %w", err)
+		}
+		if memberMetrics.CompletedCount > 0 && memberMetrics.CompletedCount%5 == 0 && memberMetrics.CurrentRank < 5 {
 			if err := q.SetAdventurerRank(ctx, database.SetAdventurerRankParams{
-				CurrentRank: int32(math.Round(float64(member.CompletedCount) / 5.0)),
-				ID:          member.AdventurerID,
+
+				CurrentRank: int32(math.Round(float64(memberMetrics.CompletedCount) / 5.0)),
+				ID:          memberMetrics.AdventurerID,
 			}); err != nil {
 				return fmt.Errorf("Error occurred during party member ranking: %w", err)
 			}

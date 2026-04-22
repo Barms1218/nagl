@@ -103,3 +103,10 @@ INSERT INTO contracts (
     reward
 ) VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
+
+-- name: GetAdventurersOnContract :many
+SELECT
+a.id
+FROM adventurers a
+JOIN parties p ON a.party_id = p.id
+WHERE p.contract_id = $1;

@@ -28,7 +28,7 @@ func (q *Queries) AddpartyToContract(ctx context.Context, arg AddpartyToContract
 	return err
 }
 
-const countMemberCompleteContracts = `-- name: CountMemberCompleteContracts :many
+const countMemberCompleteContracts = `-- name: CountMemberCompleteContracts :one
 SELECT ach.adventurer_id, a.name, a.current_rank, COUNT(*) AS completed_count
 FROM adventurer_contract_history ach
 JOIN adventurers a ON a.id = ach.adventurer_id
@@ -46,29 +46,16 @@ type CountMemberCompleteContractsRow struct {
 	CompletedCount int64       `json:"completed_count"`
 }
 
-func (q *Queries) CountMemberCompleteContracts(ctx context.Context, adventurerID uuid.UUID) ([]CountMemberCompleteContractsRow, error) {
-	rows, err := q.db.Query(ctx, countMemberCompleteContracts, adventurerID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []CountMemberCompleteContractsRow
-	for rows.Next() {
-		var i CountMemberCompleteContractsRow
-		if err := rows.Scan(
-			&i.AdventurerID,
-			&i.Name,
-			&i.CurrentRank,
-			&i.CompletedCount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) CountMemberCompleteContracts(ctx context.Context, adventurerID uuid.UUID) (CountMemberCompleteContractsRow, error) {
+	row := q.db.QueryRow(ctx, countMemberCompleteContracts, adventurerID)
+	var i CountMemberCompleteContractsRow
+	err := row.Scan(
+		&i.AdventurerID,
+		&i.Name,
+		&i.CurrentRank,
+		&i.CompletedCount,
+	)
+	return i, err
 }
 
 const createParty = `-- name: CreateParty :one

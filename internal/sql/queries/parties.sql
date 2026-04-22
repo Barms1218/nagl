@@ -65,7 +65,7 @@ UPDATE parties
 SET party_rank = $1
 WHERE id = $2;
 
--- name: CountMemberCompleteContracts :many
+-- name: CountMemberCompleteContracts :one
 SELECT ach.adventurer_id, a.name, a.current_rank, COUNT(*) AS completed_count
 FROM adventurer_contract_history ach
 JOIN adventurers a ON a.id = ach.adventurer_id

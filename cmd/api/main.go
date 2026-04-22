@@ -29,10 +29,9 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	dbConn, err := pgxpool.New(ctx, dbURL)
 
-	//q := database.New(dbConn)
 	store := database.NewStore(dbConn)
 	client := anthropic.NewClient(
-		option.WithAPIKey("my-anthropic-api-key"), // defaults to os.LookupEnv("ANTHROPIC_API_KEY")
+		option.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
 	)
 	keyBytes, err := os.ReadFile("ec_private.pem")
 	if err != nil {

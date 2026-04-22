@@ -5,6 +5,8 @@
 * **Language:** Go (Golang)
 * **Database:** PostgreSQL
 * **Framework:** Chi Router
+* **SQL Engine:** SQLC
+* **Migrations:** Goose
 * **Auth**: JWT with ECDSA signing
 * **Environment:** Developed using Neovim and Wezterm
 
@@ -64,6 +66,8 @@ go run main.go
 ## Engineering Decisions
 * PostgreSQL was chosen for its flexibility and speed. The ability to create type-safe enums was also a big factor.
 * Chi was selected because the Go standard library is already excellent. Chi was used because it doesn't interfere with that strength.
+* SQLC was chosen for the ability to write raw sql but work with type-safe Go code.
+* Goose was chosen for its simplicity in handling migrations, and the encouragement to write numbered sql files.
 * The Anthropic SDK was chosen for procedural generation due to Claude's strength in creative writing.
 
 **Example of a prompt to Anthropic SDK**

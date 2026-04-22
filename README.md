@@ -1,22 +1,23 @@
 # NAGL
-A backend utility designed to handle logic for managing a simulated guild of adventurers (Fantasy HR).
+**Fantasy HR:** A backend utility designed to manage a simulated guild of adventurers.
 
 ## Tech Stack
-* Language: Go (Golang)
-* Database: Postgresql
-* Framework: Chi
-* Environment: Developed using Neovim and Wezterm
+* **Language:** Go (Golang)
+* **Database:** Postgresql
+* **Framework:** Chi Router
+* **Auth**: JWT with ECDSA signing
+* **Environment:** Developed using Neovim and Wezterm
 
 ## Features
-* Go-based backend: Leveraged Go's efficiency for core logic
-* Modular Design: Organized packages into domains for easy scaling
-* Dependency Management: Uses Go modules for reliable builds
-* Postgresql database for persistence
-* Authentication using JWT with ECDSA signing method
+* **Domain-Driven Design:** Organized into modular domains for scalable backend architecture.
+* **Dependency Management:** Using App pattern with Chi Router to inject services into handlers.
+* **Persistent Storage:** Full PostgreSQL integration for guild data, adventurers, and contracts.
+* **JWT Authentication:** Secure access using ECDSA-signed tokens
+* **Procedural Generation:** Anthropic SDK for procedural generation of adventurers, contracts, and party names.
 
 ## Prerequisites
 * Go (version 1.21 or higher recommended)
-* A code editor (Neovim or VS Code)
+* PostgreSQL: A running instance for data persistence
 
 ## Installation & Setup
 1. Clone the repository:
@@ -30,6 +31,7 @@ A backend utility designed to handle logic for managing a simulated guild of adv
 ```go run main.go```.
 
 ## Roadmap
-* Add goroutines to handle asynchronous operations.
-* Add cron jobs to handle automated creation of adventurers and contracts.
-* Enchanted Item Management.
+* [] **Seed Database:** Add starting adventurers and contracts.
+* [] **Asynchronous Operations:** Implement Goroutines for background task processing.
+* [] **Automated Guild Growth:** Add Cron jobs for automated creation of adventurers and contracts.
+* [] **Enchanted Item Management:** Expand the schema to support magical inventory and equipment.

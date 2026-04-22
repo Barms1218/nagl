@@ -31,5 +31,6 @@ If the go.mod is present, run the following to download the necessary dependenci
 To start the service, run: ```go run main.go```.
 
 # Roadmap
-* Add goroutines to handle asynchronous operations
-* Add cron jobs to handle automated creation of adventurers and contracts
+* Add goroutines to handle asynchronous operations.
+* Add cron jobs to handle automated creation of adventurers and contracts.
+* Enchanted Item Management.

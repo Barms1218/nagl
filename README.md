@@ -84,4 +84,5 @@ go run main.go
 * [ ] **Seed Database:** Add starting adventurers and contracts.
 * [ ] **Asynchronous Operations:** Implement Goroutines for background task processing.
 * [ ] **Automated Guild Growth:** Add Cron jobs for automated creation of adventurers and contracts.
-* [ ] **Enchanted Item Management:** Expand the schema to support magical inventory and equipment.
+* [ ] **Enchanted Item Management:** Expand the schema to support magical inventory and equipment, adding more depth to guild economy.
+* [ ] **Artificer Service:** Add a guild artificer that can recharge enchanted items.

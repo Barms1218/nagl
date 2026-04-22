@@ -28,12 +28,31 @@ git clone https://github.com/Barms1218/nagl.git
 cd nagl
 ```
 
-2. **Handle Dependencies:**
+2. **Configure Enironment Variables:**
+   ```
+   PORT=8080
+   DB_URL=postgres://user:password@localhost:5432/nagl
+   ANTHROPIC_API_KEY=your_key_here
+   PRIVATE_KEY_PATH=path to your private key file
+   ```
+   
+3. **Set Up Security Keys:**
+   This project uses ECDSA for JWT signing. Ensure you have your private key file in the root directory:
+   ```
+   # Generate the private key
+   openssl ecparam -name prime256v1 -genkey -noout -out ec_private.pem
+
+   # Derive the public key
+   openssl ec -in ec_private.pem -pubout -out ec_public.pem
+   ```
+   **Note:** Ensure that your private key file is added to your ```.gitignore``` to keep your private key secure.
+  
+5. **Handle Dependencies:**
 ```
 go mod tidy
 ```
 
-3. **Running the App:**
+5. **Running the App:**
 ```
 go run main.go
 ```

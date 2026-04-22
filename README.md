@@ -25,10 +25,10 @@ If you are having issues importing the code or running the project, follow tehse
 ```cd nagl```
 
 2. Handle Dependencies:
-If the go.mod is present, run the following to download the necessary dependencies: go mod tidy
+If the go.mod is present, run the following to download the necessary dependencies: ```go mod tidy```.
 
 3. Running the App
-To start the service, run: go run main.go.
+To start the service, run: ```go run main.go```.
 
 # Roadmap
 * Add goroutines to handle asynchronous operations

@@ -17,7 +17,7 @@
 * **JWT Authentication:** Secure access using ECDSA-signed tokens
 * **Procedural Generation:** Anthropic SDK for procedural generation of adventurers, contracts, and party names.
 * **Complex Simulation Logic:** Manages party and individual progression through ACID-compliant PostgreSQL transactions.
-* **Dynamic Conctract Lifestyle:** Handles the full flow from procedural generation and claiming to completion or failure with "Party Fate" calculations.
+* **Dynamic Contract Lifestyle:** Handles the full flow from procedural generation and claiming to completion or failure with "Party Fate" calculations.
 * **Advanced Filtering:** Flexible listing service for adventurers and contracts using multi-parameter search filters.
 
 ## Prerequisites
@@ -69,6 +69,7 @@ go run main.go
 * SQLC was chosen for the ability to write raw sql but work with type-safe Go code.
 * Goose was chosen for its simplicity in handling migrations, and the encouragement to write numbered sql files.
 * The Anthropic SDK was chosen for procedural generation due to Claude's strength in creative writing.
+* Manually mapped database models to response DTOs to ensure strict separation of concerns, preventing accidental data leaks.
 
 **Example of a prompt to Anthropic SDK**
 ```

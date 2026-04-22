@@ -21,8 +21,8 @@ A backend utility designed to handle logic for managing a simulated guild of adv
 # Installation & Setup
 If you are having issues importing the code or running the project, follow tehse steps to ensure your environment is configured correctly
 1. Clone the repository:
-```git clone https://github.com/Barms1218/nagl.git
-cd nagl```
+```git clone https://github.com/Barms1218/nagl.git```
+```cd nagl```
 
 2. Handle Dependencies:
 If the go.mod is present, run the following to download the necessary dependencies: go mod tidy

@@ -100,8 +100,9 @@ INSERT INTO contracts (
     difficulty,
     rec_party_size,
     description,
-    reward
-) VALUES ($1, $2, $3, $4, $5)
+    reward,
+    duration_minutes
+) VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: GetAdventurersOnContract :many
@@ -110,3 +111,4 @@ a.id
 FROM adventurers a
 JOIN parties p ON a.party_id = p.id
 WHERE p.contract_id = $1;
+

@@ -224,16 +224,19 @@ type AdventurerHistory struct {
 }
 
 type Contract struct {
-	ID             uuid.UUID          `json:"id"`
-	GuildID        pgtype.UUID        `json:"guild_id"`
-	Title          pgtype.Text        `json:"title"`
-	Difficulty     int32              `json:"difficulty"`
-	RecPartySize   int32              `json:"rec_party_size"`
-	Description    pgtype.Text        `json:"description"`
-	ContractStatus ContractStatusEnum `json:"contract_status"`
-	Reward         int32              `json:"reward"`
-	CreatedAt      pgtype.Timestamp   `json:"created_at"`
-	UpdatedAt      pgtype.Timestamp   `json:"updated_at"`
+	ID              uuid.UUID          `json:"id"`
+	GuildID         pgtype.UUID        `json:"guild_id"`
+	Title           pgtype.Text        `json:"title"`
+	Difficulty      int32              `json:"difficulty"`
+	RecPartySize    int32              `json:"rec_party_size"`
+	Description     pgtype.Text        `json:"description"`
+	ContractStatus  ContractStatusEnum `json:"contract_status"`
+	Reward          int32              `json:"reward"`
+	DurationMinutes int32              `json:"duration_minutes"`
+	CreatedAt       pgtype.Timestamp   `json:"created_at"`
+	StartedAt       pgtype.Timestamp   `json:"started_at"`
+	ExpiresAt       pgtype.Timestamp   `json:"expires_at"`
+	UpdatedAt       pgtype.Timestamp   `json:"updated_at"`
 }
 
 type ContractHistory struct {

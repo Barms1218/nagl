@@ -1,6 +1,6 @@
 -- name: CreateParty :one
-INSERT INTO parties (guild_id, contract_id, name)
-VALUES($1, $2, $3)
+INSERT INTO parties (guild_id, name)
+VALUES($1, $2)
 RETURNING *;
 
 -- name: GetParty :one

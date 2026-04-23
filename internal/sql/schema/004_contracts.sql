@@ -16,7 +16,11 @@ CREATE TABLE contracts (
 	CHECK (difficulty >= 1 AND difficulty <= 5),
 	contract_status contract_status_enum NOT NULL DEFAULT 'available',
 	reward INTEGER NOT NULL DEFAULT 0,
+	duration_minutes INTEGER NOT NULL DEFAULT 60,
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	started_at TIMESTAMP,
+	expires_at TIMESTAMP GENERATED ALWAYS AS
+	(started_at + (duration_minutes * INTERVAL '1 minute')) STORED,
 	updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

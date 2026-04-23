@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/Barms1218/nagl/internal/database"
+	"github.com/invopop/jsonschema"
 
 	"github.com/anthropics/anthropic-sdk-go" // imported as anthropic
 )
@@ -20,6 +20,15 @@ func NewProceduralService(c *anthropic.Client, s *database.Store) *ProceduralSer
 		client: c,
 		store:  s,
 	}
+}
+
+func GenerateSchema(v any) map[string]any {
+	r := jsonschema.Reflector{AllowAdditionalProperties: false, DoNotReference: true}
+	s := r.Reflect(v)
+	b, _ := json.Marshal(s)
+	var m map[string]any
+	json.Unmarshal(b, &m)
+	return m
 }
 
 func (s *ProceduralService) PromptForAdventurer(ctx context.Context) (*anthropic.Message, error) {
@@ -37,6 +46,11 @@ func (s *ProceduralService) PromptForAdventurer(ctx context.Context) (*anthropic
 			anthropic.NewUserMessage(
 				anthropic.NewTextBlock("Generate a new adventurer available for recruitment."),
 			),
+		},
+		OutputConfig: anthropic.OutputConfigParam{
+			Format: anthropic.JSONOutputFormatParam{
+				Schema: GenerateSchema(GeneratedAdventurer{}),
+			},
 		},
 	})
 	if err != nil {
@@ -73,15 +87,8 @@ func (s *ProceduralService) CreateAdventurerPrompt(ctx context.Context) (string,
 		return "", fmt.Errorf("Error serializing exclusion list: %w", err)
 	}
 
-	systemPrompt := fmt.Sprintf(`You are a fantasy adventurer record keeper. Generate an adventurer profile as JSON. Respond with ONLY valid JSON, no markdown, no explanation. Use this exact shape:
-	{
-		"name": "string",
-		"role": "frontliner" | "spellcaster" | "healer" | "generalist",
-		"current_rank": 1-5,
-		"description": "string (2-3 sentences of flavor text)",
-		"upkeep_cost": 10-100,
-		"recruitment_cost": 50-(100 * current_rank)
-	}
+	systemPrompt := fmt.Sprintf(`You are a fantasy adventurer record keeper. Generate an adventurer profile as JSON. 
+
 	The following adventurers already exist. Do not repeat their names, and avoid generating a duplicate combination of role and rank: %s`, string(exclusionJSON))
 
 	return systemPrompt, nil
@@ -93,36 +100,20 @@ func (s *ProceduralService) GenerateAdventurer(ctx context.Context) (GeneratedAd
 		return GeneratedAdventurer{}, err
 	}
 
-	var raw string
+	var adventurer GeneratedAdventurer
 	for _, block := range message.Content {
-		if block.Type == "text" {
-			raw = block.Text
-			break
+		switch variant := block.AsAny().(type) {
+		case anthropic.TextBlock:
+			if err := json.Unmarshal([]byte(variant.Text), &adventurer); err != nil {
+				return GeneratedAdventurer{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, variant.Text)
+			}
 		}
 	}
-	if raw == "" {
-		return GeneratedAdventurer{}, fmt.Errorf("Empty response from model")
-	}
-
-	var request AdventurerRequest
-	if err := json.Unmarshal([]byte(raw), &request); err != nil {
-		return GeneratedAdventurer{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, raw)
-	}
-
 	params := database.UpsertAdventurerParams{
-		Name:        database.StringToPgtype(request.Name),
-		CurrentRank: int32(request.Rank),
-		Role:        database.RoleEnum(request.Role),
-		Description: request.Bio,
-	}
-
-	adventurer := GeneratedAdventurer{
-		Name:            request.Name,
-		Role:            request.Role,
-		Rank:            GetRankString(request.Rank),
-		Bio:             request.Bio,
-		UpkeepCost:      request.UpkeepCost,
-		RecruitmentCost: request.RecruitmentCost,
+		Name:        database.StringToPgtype(adventurer.Name),
+		CurrentRank: adventurer.Rank,
+		Role:        database.RoleEnum(adventurer.Role),
+		Description: adventurer.Bio,
 	}
 
 	_, err = s.store.UpsertAdventurer(ctx, params)
@@ -161,14 +152,8 @@ func (s *ProceduralService) CreateContractPrompt(ctx context.Context) (string, e
 		return "", fmt.Errorf("Error serializing exclusion list: %w", err)
 	}
 
-	systemPrompt := fmt.Sprintf(`You are a fantasy guild contract liason. Generate a contract as JSON. Response with ONLY valid JSON, no markdown, no explanation. Use this exact shape:
-	{
-		"title": "string",
-		"description": string (3-4 sentences of flavor text related to the title.)",
-		"difficulty": 1-5,
-		"rec_party_size": 1-5,
-		"reward": 300-500
-	}
+	systemPrompt := fmt.Sprintf(`You are a fantasy guild contract liason. Generate a contract as JSON.
+
 	The following contracts are already in use. Do not repeat their titles, and avoid generating a duplicate combination of difficulty and rec_party_size: %s`, string(exclusionJSON))
 
 	return systemPrompt, nil
@@ -190,6 +175,11 @@ func (s *ProceduralService) PromptForContract(ctx context.Context) (*anthropic.M
 				anthropic.NewTextBlock("Generate a new contract."),
 			),
 		},
+		OutputConfig: anthropic.OutputConfigParam{
+			Format: anthropic.JSONOutputFormatParam{
+				Schema: GenerateSchema(GeneratedContract{}),
+			},
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -204,28 +194,23 @@ func (s *ProceduralService) GenerateContract(ctx context.Context) (GeneratedCont
 		return GeneratedContract{}, err
 	}
 
-	var raw string
+	var contract GeneratedContract
 	for _, block := range message.Content {
-		if block.Type == "text" {
-			raw = block.Text
-			break
+		switch variant := block.AsAny().(type) {
+		case anthropic.TextBlock:
+			if err := json.Unmarshal([]byte(variant.Text), &contract); err != nil {
+				return GeneratedContract{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, variant.Text)
+			}
 		}
-	}
-	if raw == "" {
-		return GeneratedContract{}, fmt.Errorf("Empty response model")
-	}
-
-	var request ContractRequest
-	if err := json.Unmarshal([]byte(raw), &request); err != nil {
-		return GeneratedContract{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, raw)
 	}
 
 	params := database.InsertContractParams{
-		Title:        database.StringToPgtype(request.Title),
-		Difficulty:   int32(request.Difficulty),
-		RecPartySize: int32(request.RecPartySize),
-		Description:  database.StringToPgtype(request.Description),
-		Reward:       int32(request.Reward),
+		Title:           database.StringToPgtype(contract.Title),
+		Difficulty:      contract.Difficulty,
+		RecPartySize:    int32(contract.RecPartySize),
+		Description:     database.StringToPgtype(contract.Description),
+		Reward:          int32(contract.Reward),
+		DurationMinutes: int32(contract.Duration),
 	}
 
 	_, err = s.store.InsertContract(ctx, params)
@@ -233,13 +218,7 @@ func (s *ProceduralService) GenerateContract(ctx context.Context) (GeneratedCont
 		return GeneratedContract{}, fmt.Errorf("Failed to insert new contract: %w", err)
 	}
 
-	return GeneratedContract{
-		Title:        request.Title,
-		Description:  request.Description,
-		Difficulty:   request.Description,
-		RecPartySize: request.RecPartySize,
-		Reward:       request.Reward,
-	}, nil
+	return contract, nil
 }
 
 func (s *ProceduralService) GenerateParty(ctx context.Context, r GeneratePartyRequest) (GeneratedParty, error) {
@@ -248,12 +227,7 @@ func (s *ProceduralService) GenerateParty(ctx context.Context, r GeneratePartyRe
 	if err != nil {
 		return GeneratedParty{}, fmt.Errorf("Failed to serialize party info: %w", err)
 	}
-	systemPrompt := fmt.Sprintf(`You are a fantasy guild party manager. Generate a name for a party of fantasy adventurers. Respond with ONLY valid JSON, no mardown, no exaplanation. Use this exact shape:
-	{
-		"guild_id", "uuid.UUID" (The guild that the adventurers are a part of),
-		"name" "string" (Should be considered based on adventurer roles and current_ranks)
-	}
-	The party details are as follows: %s`, string(partyJSON))
+	systemPrompt := fmt.Sprintf(`You are a fantasy guild party manager. Generate a name for a party of fantasy adventurers. The party details are as follows: %s`, string(partyJSON))
 
 	message, err := s.client.Messages.New(ctx, anthropic.MessageNewParams{
 		Model:     anthropic.ModelClaudeSonnet4_6,
@@ -266,36 +240,36 @@ func (s *ProceduralService) GenerateParty(ctx context.Context, r GeneratePartyRe
 				anthropic.NewTextBlock("Generate a new party name."),
 			),
 		},
+		OutputConfig: anthropic.OutputConfigParam{
+			Format: anthropic.JSONOutputFormatParam{
+				Schema: GenerateSchema(PartyName{}),
+			},
+		},
 	})
 	if err != nil {
 		return GeneratedParty{}, err
 	}
 
-	var raw string
+	var party PartyName
 	for _, block := range message.Content {
-		if block.Type == "text" {
-			raw = block.Text
-			break
+		switch variant := block.AsAny().(type) {
+		case anthropic.TextBlock:
+			if err := json.Unmarshal([]byte(variant.Text), &party); err != nil {
+				return GeneratedParty{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, variant.Text)
+			}
 		}
-	}
-	if raw == "" {
-		return GeneratedParty{}, err
-	}
-
-	var request GeneratedParty
-	if err := json.Unmarshal([]byte(raw), &request); err != nil {
-		return GeneratedParty{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, raw)
 	}
 
 	params := database.CreatePartyParams{
 		GuildID: r.GuildID,
-		Name:    request.PartyName,
+		Name:    party.PartyName,
 	}
 	inserted, err := s.store.CreateParty(ctx, params)
 
 	return GeneratedParty{
+		GuildID:      party.GuildID,
 		GuildName:    r.GuildName,
-		PartyName:    request.PartyName,
+		PartyName:    party.PartyName,
 		PartyStatus:  string(inserted.PartyStatus),
 		MaxPartySize: inserted.MaximumPartySize,
 	}, nil

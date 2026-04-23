@@ -16,7 +16,7 @@ CREATE TABLE parties (
 	guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
 	name TEXT UNIQUE NOT NULL,
 	party_rank INTEGER NOT NULL DEFAULT 1,
-	maximum_party_size INTEGER NOT NULL DEFAULT 5,
+	maximum_party_size INTEGER NOT NULL DEFAULT 3,
 	party_status party_status_enum NOT NULL DEFAULT 'available',
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	UNIQUE(guild_id, contract_id)

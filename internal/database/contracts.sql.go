@@ -182,17 +182,19 @@ INSERT INTO contracts (
     difficulty,
     rec_party_size,
     description,
-    reward
-) VALUES ($1, $2, $3, $4, $5)
-RETURNING id, guild_id, title, difficulty, rec_party_size, description, contract_status, reward, created_at, updated_at
+    reward,
+    duration_minutes
+) VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, guild_id, title, difficulty, rec_party_size, description, contract_status, reward, duration_minutes, created_at, started_at, expires_at, updated_at
 `
 
 type InsertContractParams struct {
-	Title        pgtype.Text `json:"title"`
-	Difficulty   int32       `json:"difficulty"`
-	RecPartySize int32       `json:"rec_party_size"`
-	Description  pgtype.Text `json:"description"`
-	Reward       int32       `json:"reward"`
+	Title           pgtype.Text `json:"title"`
+	Difficulty      int32       `json:"difficulty"`
+	RecPartySize    int32       `json:"rec_party_size"`
+	Description     pgtype.Text `json:"description"`
+	Reward          int32       `json:"reward"`
+	DurationMinutes int32       `json:"duration_minutes"`
 }
 
 func (q *Queries) InsertContract(ctx context.Context, arg InsertContractParams) (Contract, error) {
@@ -202,6 +204,7 @@ func (q *Queries) InsertContract(ctx context.Context, arg InsertContractParams) 
 		arg.RecPartySize,
 		arg.Description,
 		arg.Reward,
+		arg.DurationMinutes,
 	)
 	var i Contract
 	err := row.Scan(
@@ -213,7 +216,10 @@ func (q *Queries) InsertContract(ctx context.Context, arg InsertContractParams) 
 		&i.Description,
 		&i.ContractStatus,
 		&i.Reward,
+		&i.DurationMinutes,
 		&i.CreatedAt,
+		&i.StartedAt,
+		&i.ExpiresAt,
 		&i.UpdatedAt,
 	)
 	return i, err

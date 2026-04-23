@@ -59,19 +59,18 @@ func (q *Queries) CountMemberCompleteContracts(ctx context.Context, adventurerID
 }
 
 const createParty = `-- name: CreateParty :one
-INSERT INTO parties (guild_id, contract_id, name)
-VALUES($1, $2, $3)
+INSERT INTO parties (guild_id, name)
+VALUES($1, $2)
 RETURNING id, contract_id, guild_id, name, party_rank, maximum_party_size, party_status, created_at
 `
 
 type CreatePartyParams struct {
-	GuildID    uuid.UUID   `json:"guild_id"`
-	ContractID pgtype.UUID `json:"contract_id"`
-	Name       string      `json:"name"`
+	GuildID uuid.UUID `json:"guild_id"`
+	Name    string    `json:"name"`
 }
 
 func (q *Queries) CreateParty(ctx context.Context, arg CreatePartyParams) (Party, error) {
-	row := q.db.QueryRow(ctx, createParty, arg.GuildID, arg.ContractID, arg.Name)
+	row := q.db.QueryRow(ctx, createParty, arg.GuildID, arg.Name)
 	var i Party
 	err := row.Scan(
 		&i.ID,

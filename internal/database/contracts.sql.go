@@ -154,6 +154,48 @@ func (q *Queries) GetContractDetailsByID(ctx context.Context, id uuid.UUID) (Get
 	return i, err
 }
 
+const getExpiredContracts = `-- name: GetExpiredContracts :many
+SELECT
+title,
+difficulty,
+contract_status,
+reward
+FROM contracts
+WHERE expires_at <= NOW()
+`
+
+type GetExpiredContractsRow struct {
+	Title          pgtype.Text        `json:"title"`
+	Difficulty     int32              `json:"difficulty"`
+	ContractStatus ContractStatusEnum `json:"contract_status"`
+	Reward         int32              `json:"reward"`
+}
+
+func (q *Queries) GetExpiredContracts(ctx context.Context) ([]GetExpiredContractsRow, error) {
+	rows, err := q.db.Query(ctx, getExpiredContracts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetExpiredContractsRow
+	for rows.Next() {
+		var i GetExpiredContractsRow
+		if err := rows.Scan(
+			&i.Title,
+			&i.Difficulty,
+			&i.ContractStatus,
+			&i.Reward,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPartyOnContract = `-- name: GetPartyOnContract :one
 SELECT
 id,

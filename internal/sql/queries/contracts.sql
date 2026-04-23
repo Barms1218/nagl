@@ -112,3 +112,11 @@ FROM adventurers a
 JOIN parties p ON a.party_id = p.id
 WHERE p.contract_id = $1;
 
+-- name: GetExpiredContracts :many
+SELECT
+title,
+difficulty,
+contract_status,
+reward
+FROM contracts
+WHERE expires_at <= NOW();

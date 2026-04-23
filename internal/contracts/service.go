@@ -304,6 +304,17 @@ func (s *ContractService) HandlePartyProgression(
 	return nil
 }
 
+func (s *ContractService) CheckExpiredContracts(ctx context.Context) error {
+	expired, err := s.store.GetExpiredContracts(ctx)
+	if err != nil {
+		return fmt.Errorf("Error occurred when checking expired contracts: %w", err)
+	}
+
+	for _, c := range expired {
+
+	}
+}
+
 func GetDifficultyString(difficulty int32) string {
 	var diffString string
 	switch difficulty {

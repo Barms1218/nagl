@@ -60,46 +60,34 @@ func main() {
 		privateKey,
 	)
 
-	errCh := make(chan error)
 	c.AddFunc("@every 4h", func() {
 		go func() {
 			app.Logger.Info("Starting Procedural Generation", "Type", "Adventurer")
 			if err := app.ProceduralService.GenerateAdventurer(ctx); err != nil {
-				errCh <- err
+				app.Logger.Error("Adventurer Generation Failed", "Error", err)
 			}
 		}()
 	})
-	close(errCh)
-	if len(errCh) > 0 {
-		slog.Error("Procedural Generation Error", "Error", errCh, "Type", "Adventurer")
-	}
 
-	c.AddFunc("@every 1.5h", func() {
+	c.AddFunc("@every 1h30m", func() {
 		go func() {
 			app.Logger.Info("Starting Procedural Generation", "Type", "Contract")
 			if err := app.ProceduralService.GenerateContract(ctx); err != nil {
-				errCh <- err
+				app.Logger.Error("Contract Generation Failed", "Error", err)
 			}
 		}()
 	})
-	close(errCh)
-	if len(errCh) > 0 {
-		slog.Error("Procedural Generation Error", "Error", errCh, "Type", "Contract")
-	}
 
 	c.AddFunc("@every 1h", func() {
 		go func() {
 			app.Logger.Info("Checking expired contracts")
 			if err := app.ContractService.CheckExpiredContracts(ctx); err != nil {
-				errCh <- err
+				app.Logger.Error("Contract Resolution Failed", "Error", err)
 			}
 		}()
 	})
-	close(errCh)
-	if len(errCh) > 0 {
-		slog.Error("Contract Resolution Failure", "Error", errCh, "Type", "Contract")
-	}
 
+	c.Start()
 	r := app.Routes()
 
 	server := &http.Server{

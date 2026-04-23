@@ -87,6 +87,19 @@ func main() {
 		slog.Error("Procedural Generation Error", "Error", errCh, "Type", "Contract")
 	}
 
+	c.AddFunc("@every 1h", func() {
+		go func() {
+			app.Logger.Info("Checking expired contracts")
+			if err := app.ContractService.CheckExpiredContracts(ctx); err != nil {
+				errCh <- err
+			}
+		}()
+	})
+	close(errCh)
+	if len(errCh) > 0 {
+		slog.Error("Contract Resolution Failure", "Error", errCh, "Type", "Contract")
+	}
+
 	r := app.Routes()
 
 	server := &http.Server{

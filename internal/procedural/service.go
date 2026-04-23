@@ -94,10 +94,10 @@ func (s *ProceduralService) CreateAdventurerPrompt(ctx context.Context) (string,
 	return systemPrompt, nil
 }
 
-func (s *ProceduralService) GenerateAdventurer(ctx context.Context) (GeneratedAdventurer, error) {
+func (s *ProceduralService) GenerateAdventurer(ctx context.Context) error {
 	message, err := s.PromptForAdventurer(ctx)
 	if err != nil {
-		return GeneratedAdventurer{}, err
+		return err
 	}
 
 	var adventurer GeneratedAdventurer
@@ -105,7 +105,7 @@ func (s *ProceduralService) GenerateAdventurer(ctx context.Context) (GeneratedAd
 		switch variant := block.AsAny().(type) {
 		case anthropic.TextBlock:
 			if err := json.Unmarshal([]byte(variant.Text), &adventurer); err != nil {
-				return GeneratedAdventurer{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, variant.Text)
+				return fmt.Errorf("JSON parse failed: %w - raw: %s", err, variant.Text)
 			}
 		}
 	}
@@ -118,10 +118,10 @@ func (s *ProceduralService) GenerateAdventurer(ctx context.Context) (GeneratedAd
 
 	_, err = s.store.UpsertAdventurer(ctx, params)
 	if err != nil {
-		return GeneratedAdventurer{}, fmt.Errorf("Error inserting new adventurer: %w", err)
+		return fmt.Errorf("Error inserting new adventurer: %w", err)
 	}
 
-	return adventurer, nil
+	return nil
 }
 
 func (s *ProceduralService) CreateContractPrompt(ctx context.Context) (string, error) {
@@ -188,10 +188,10 @@ func (s *ProceduralService) PromptForContract(ctx context.Context) (*anthropic.M
 	return message, nil
 }
 
-func (s *ProceduralService) GenerateContract(ctx context.Context) (GeneratedContract, error) {
+func (s *ProceduralService) GenerateContract(ctx context.Context) error {
 	message, err := s.PromptForContract(ctx)
 	if err != nil {
-		return GeneratedContract{}, err
+		return err
 	}
 
 	var contract GeneratedContract
@@ -199,7 +199,7 @@ func (s *ProceduralService) GenerateContract(ctx context.Context) (GeneratedCont
 		switch variant := block.AsAny().(type) {
 		case anthropic.TextBlock:
 			if err := json.Unmarshal([]byte(variant.Text), &contract); err != nil {
-				return GeneratedContract{}, fmt.Errorf("JSON parse failed: %w - raw: %s", err, variant.Text)
+				return fmt.Errorf("JSON parse failed: %w - raw: %s", err, variant.Text)
 			}
 		}
 	}
@@ -215,10 +215,10 @@ func (s *ProceduralService) GenerateContract(ctx context.Context) (GeneratedCont
 
 	_, err = s.store.InsertContract(ctx, params)
 	if err != nil {
-		return GeneratedContract{}, fmt.Errorf("Failed to insert new contract: %w", err)
+		return fmt.Errorf("Failed to insert new contract: %w", err)
 	}
 
-	return contract, nil
+	return nil
 }
 
 func (s *ProceduralService) GenerateParty(ctx context.Context, r GeneratePartyRequest) (GeneratedParty, error) {

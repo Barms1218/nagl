@@ -42,9 +42,12 @@ CREATE TABLE adventurers (
 CREATE INDEX ix_ad_rank ON adventurers (current_rank);
 CREATE INDEX ix_ad_activity ON adventurers (current_activity);
 CREATE INDEX ix_ad_activity ON adventurers (role);
-
+CREATE INDEX ix_party_id ON adventurers (party_id);
+CREATE INDEX ix_guild_id ON adventurers (guild_id);
 
 -- +goose Down
+DROP INDEX ix_party_id ON adventurers (party_id);
+DROP INDEX ix_guild_id ON adventurers (guild_id);
 DROP INDEX ix_ad_rank ON adventurers (current_rank);
 DROP INDEX ix_ad_activity ON adventurers (current_activity);
 DROP INDEX ix_ad_activity ON adventurers (role);

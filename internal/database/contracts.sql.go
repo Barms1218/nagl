@@ -156,19 +156,25 @@ func (q *Queries) GetContractDetailsByID(ctx context.Context, id uuid.UUID) (Get
 
 const getExpiredContracts = `-- name: GetExpiredContracts :many
 SELECT
-title,
-difficulty,
-contract_status,
-reward
-FROM contracts
-WHERE expires_at <= NOW()
+g.id AS guild_id,
+p.id AS party_id,
+c.id AS contract_id,
+c.title,
+c.difficulty,
+c.reward
+FROM contracts c
+JOIN parties p ON c.id = p.contract_id
+JOIN guilds g ON p.guild_id = g.id
+WHERE expires_at <= NOW() AND contract_status = "in-progress"
 `
 
 type GetExpiredContractsRow struct {
-	Title          pgtype.Text        `json:"title"`
-	Difficulty     int32              `json:"difficulty"`
-	ContractStatus ContractStatusEnum `json:"contract_status"`
-	Reward         int32              `json:"reward"`
+	GuildID    uuid.UUID   `json:"guild_id"`
+	PartyID    uuid.UUID   `json:"party_id"`
+	ContractID uuid.UUID   `json:"contract_id"`
+	Title      pgtype.Text `json:"title"`
+	Difficulty int32       `json:"difficulty"`
+	Reward     int32       `json:"reward"`
 }
 
 func (q *Queries) GetExpiredContracts(ctx context.Context) ([]GetExpiredContractsRow, error) {
@@ -181,9 +187,11 @@ func (q *Queries) GetExpiredContracts(ctx context.Context) ([]GetExpiredContract
 	for rows.Next() {
 		var i GetExpiredContractsRow
 		if err := rows.Scan(
+			&i.GuildID,
+			&i.PartyID,
+			&i.ContractID,
 			&i.Title,
 			&i.Difficulty,
-			&i.ContractStatus,
 			&i.Reward,
 		); err != nil {
 			return nil, err

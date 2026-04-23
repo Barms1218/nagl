@@ -44,6 +44,15 @@ JOIN contracts c ON p.contract_id = c.id
 JOIN adventurers a ON p.id = a.party_id
 WHERE p.id = $1;
 
+-- name: GetMemberDetails :many
+SELECT 
+id
+name,
+role,
+current_rank
+FROM adventurers a
+WHERE party_id = $1;
+
 -- name: InsertPartyHistory :exec
 INSERT INTO party_history (
 	party_id,

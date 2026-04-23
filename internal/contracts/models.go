@@ -59,7 +59,7 @@ type PastContractsParams struct {
 // Parameters to set a particular contract to a particular status
 type SetContractStatusRequest struct {
 	GuildID    uuid.UUID `json:"guild_id"`
-	ID         uuid.UUID `json:"id"`
+	ContractID uuid.UUID `json:"id"`
 	PartyID    uuid.UUID `json:"party_id"`
 	NewStatus  string    `json:"status" validate:"omitempty,oneof=complete failed in-progress available"`
 	Difficulty int32     `json:"difficulty" validate:"gte=1,lte=5"`
@@ -68,16 +68,4 @@ type SetContractStatusRequest struct {
 type ContractClaimRequest struct {
 	ContractID uuid.UUID `json:"contract_id"`
 	GuildID    uuid.UUID `json:"guild_id"`
-}
-
-type ContractWithStatusRequest struct {
-	ContractStatus string    `json:"contract_status" validate:"oneof=complete failed in-progress available"`
-	GuildID        uuid.UUID `json:"guild_id"`
-	SortBy         string    `json:"sort_by" validate:"oneof=title difficulty minimum_party_size contract_status"`
-}
-
-type ContractWithDifficultyRequeset struct {
-	Difficulty int32     `json:"difficulty" validate:"gte=1,lte=5"`
-	GuildID    uuid.UUID `json:"guild_id"`
-	SortBy     string    `json:"sort_by" validate:"oneof=title difficulty minimum_party_size contract_status"`
 }

@@ -64,38 +64,6 @@ ORDER BY
 	CASE WHEN sqlc.arg(sort_by)::text = 'role' THEN role END ASC,
 	CASE WHEN sqlc.arg(sort_by)::text = 'activity' THEN current_activity END ASC;
 
--- name: GetAdventurersWithStatus :many
-SELECT 
-id,
-joined_at,
-current_rank,
-current_activity,
-description,
-name,
-role
-FROM adventurers 
-WHERE guild_id = $1 AND current_activity = $2
-ORDER BY
-	CASE WHEN sqlc.arg(sort_by)::text = 'joined_at' THEN joined_at END ASC,
-	CASE WHEN sqlc.arg(sort_by)::text = 'name' THEN name END ASC,
-	CASE WHEN sqlc.arg(sort_by)::text = 'role' THEN role END ASC;
-
--- name: GetAdventurersWithRole :many
-SELECT 
-id,
-joined_at,
-current_rank,
-current_activity,
-name,
-description,
-role 
-FROM adventurers
-WHERE guild_id = $1 AND role = $2
-ORDER BY
-	CASE WHEN sqlc.arg(sort_by)::text = 'joined_at' THEN joined_at END ASC,
-	CASE WHEN sqlc.arg(sort_by)::text = 'name' THEN name END ASC,
-	CASE WHEN sqlc.arg(sort_by)::text = 'activity' THEN current_activity END ASC;
-
 
 -- name: GetAdventurerActivities :many
 SELECT 

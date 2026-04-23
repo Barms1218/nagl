@@ -114,9 +114,13 @@ WHERE p.contract_id = $1;
 
 -- name: GetExpiredContracts :many
 SELECT
-title,
-difficulty,
-contract_status,
-reward
-FROM contracts
-WHERE expires_at <= NOW();
+g.id AS guild_id,
+p.id AS party_id,
+c.id AS contract_id,
+c.title,
+c.difficulty,
+c.reward
+FROM contracts c
+JOIN parties p ON c.id = p.contract_id
+JOIN guilds g ON p.guild_id = g.id
+WHERE expires_at <= NOW() AND contract_status = "in-progress";

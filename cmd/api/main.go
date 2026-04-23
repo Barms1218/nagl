@@ -5,12 +5,6 @@ import (
 	"errors"
 	"github.com/Barms1218/nagl/internal/adventurers"
 	"github.com/Barms1218/nagl/internal/app"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/Barms1218/nagl/internal/contracts"
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/Barms1218/nagl/internal/guild"
@@ -20,7 +14,13 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/robfig/cron/v3"
 	"log"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -43,13 +43,49 @@ func main() {
 		log.Fatal(err)
 	}
 
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	c := cron.New()
 	v := validator.New()
-	g := guild.NewGuildService(store, v, privateKey)
-	c := contracts.NewContractService(store)
-	p := procedural.NewProceduralService(&client, store)
-	a := adventurers.NewAdventurerService(store)
+	guilds := guild.NewGuildService(store, v, privateKey)
+	contracts := contracts.NewContractService(store)
+	procedural := procedural.NewProceduralService(&client, store)
+	adventurers := adventurers.NewAdventurerService(store)
 
-	app := app.NewApp(g, p, c, a, privateKey)
+	app := app.NewApp(
+		logger,
+		guilds,
+		procedural,
+		contracts,
+		adventurers,
+		privateKey,
+	)
+
+	errCh := make(chan error)
+	c.AddFunc("@every 4h", func() {
+		go func() {
+			app.Logger.Info("Starting Procedural Generation", "Type", "Adventurer")
+			if err := app.ProceduralService.GenerateAdventurer(ctx); err != nil {
+				errCh <- err
+			}
+		}()
+	})
+	close(errCh)
+	if len(errCh) > 0 {
+		slog.Error("Procedural Generation Error", "Error", errCh, "Type", "Adventurer")
+	}
+
+	c.AddFunc("@every 1.5h", func() {
+		go func() {
+			app.Logger.Info("Starting Procedural Generation", "Type", "Contract")
+			if err := app.ProceduralService.GenerateContract(ctx); err != nil {
+				errCh <- err
+			}
+		}()
+	})
+	close(errCh)
+	if len(errCh) > 0 {
+		slog.Error("Procedural Generation Error", "Error", errCh, "Type", "Contract")
+	}
 
 	r := app.Routes()
 

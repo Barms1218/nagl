@@ -138,6 +138,42 @@ func (q *Queries) GetAllParties(ctx context.Context, guildID uuid.UUID) ([]GetAl
 	return items, nil
 }
 
+const getMemberDetails = `-- name: GetMemberDetails :many
+SELECT 
+id
+name,
+role,
+current_rank
+FROM adventurers a
+WHERE party_id = $1
+`
+
+type GetMemberDetailsRow struct {
+	Name        uuid.UUID `json:"name"`
+	Role        RoleEnum  `json:"role"`
+	CurrentRank int32     `json:"current_rank"`
+}
+
+func (q *Queries) GetMemberDetails(ctx context.Context, partyID pgtype.UUID) ([]GetMemberDetailsRow, error) {
+	rows, err := q.db.Query(ctx, getMemberDetails, partyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetMemberDetailsRow
+	for rows.Next() {
+		var i GetMemberDetailsRow
+		if err := rows.Scan(&i.Name, &i.Role, &i.CurrentRank); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getParty = `-- name: GetParty :one
 SELECT
 id,

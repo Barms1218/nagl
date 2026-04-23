@@ -2,8 +2,11 @@ package contracts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
+	"math/rand/v2"
+	"sync"
 
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/google/uuid"
@@ -28,7 +31,7 @@ func (s *ContractService) ClaimContract(ctx context.Context, c ContractClaimRequ
 func (s *ContractService) StartContract(ctx context.Context, c SetContractStatusRequest) error {
 	return s.store.ExecTX(ctx, func(q *database.Queries) error {
 		contractParams := database.SetContractStatusParams{
-			ID:             c.ID,
+			ID:             c.ContractID,
 			GuildID:        database.UUIDToPgtype(c.GuildID),
 			ContractStatus: database.ContractStatusEnumInProgress,
 		}
@@ -39,7 +42,7 @@ func (s *ContractService) StartContract(ctx context.Context, c SetContractStatus
 
 		memberParams := database.SetMemberStatusParams{
 			CurrentActivity: database.ActivityEnumOnContract,
-			ContractID:      database.UUIDToPgtype(c.ID),
+			ContractID:      database.UUIDToPgtype(c.ContractID),
 		}
 
 		if err := q.SetMemberStatus(ctx, memberParams); err != nil {
@@ -201,7 +204,7 @@ func (s *ContractService) SetContractStatus(ctx context.Context, cs SetContractS
 			database.ContractStatusEnum(cs.NewStatus) == database.ContractStatusEnumFailed {
 			partyStatusParams := database.SetMemberStatusParams{
 				CurrentActivity: database.ActivityEnumAvailable,
-				ContractID:      database.UUIDToPgtype(cs.ID),
+				ContractID:      database.UUIDToPgtype(cs.ContractID),
 			}
 			err := q.SetMemberStatus(ctx, partyStatusParams)
 			if err != nil {
@@ -221,7 +224,7 @@ func (s *ContractService) RecordContractStatus(
 	cs SetContractStatusRequest) error {
 	contractParams := database.SetContractStatusParams{
 		GuildID:        database.UUIDToPgtype(cs.GuildID),
-		ID:             cs.ID,
+		ID:             cs.ContractID,
 		ContractStatus: database.ContractStatusEnum(cs.NewStatus),
 	}
 
@@ -231,7 +234,7 @@ func (s *ContractService) RecordContractStatus(
 
 	if err := q.InsertContractHistory(ctx, database.InsertContractHistoryParams{
 		GuildID:    cs.GuildID,
-		ContractID: cs.ID,
+		ContractID: cs.ContractID,
 		PartyID:    cs.PartyID,
 		Difficulty: cs.Difficulty,
 		Status:     database.ContractStatusEnum(cs.NewStatus),
@@ -252,7 +255,7 @@ func (s *ContractService) HandlePartyProgression(
 	cs SetContractStatusRequest) error {
 
 	partyHistoryParams := database.InsertPartyHistoryParams{
-		ContractID:     cs.ID,
+		ContractID:     cs.ContractID,
 		PartyID:        cs.PartyID,
 		ContractStatus: database.ContractStatusEnum(cs.NewStatus),
 	}
@@ -276,7 +279,7 @@ func (s *ContractService) HandlePartyProgression(
 	}
 
 	partyContractParams := database.InsertMemberContractHistoryParams{
-		ContractID: database.UUIDToPgtype(cs.ID),
+		ContractID: database.UUIDToPgtype(cs.ContractID),
 		Status:     database.ContractStatusEnum(cs.NewStatus),
 	}
 
@@ -305,14 +308,81 @@ func (s *ContractService) HandlePartyProgression(
 }
 
 func (s *ContractService) CheckExpiredContracts(ctx context.Context) error {
+	var errs []error
 	expired, err := s.store.GetExpiredContracts(ctx)
 	if err != nil {
-		return fmt.Errorf("Error occurred when checking expired contracts: %w", err)
+		errs = append(errs, fmt.Errorf("Error occurred when checking expired contracts: %w", err))
 	}
+
+	errCh := make(chan error, len(expired))
+	var wg sync.WaitGroup
 
 	for _, c := range expired {
+		wg.Add(1)
+		go func(database.GetExpiredContractsRow) {
+			defer wg.Done()
+			status, err := s.EvaluateContract(ctx, c)
+			if err != nil {
+				errCh <- fmt.Errorf("Could not evaluate :colo")
+			}
+
+			update := SetContractStatusRequest{
+				GuildID:    c.GuildID,
+				ContractID: c.ContractID,
+				PartyID:    c.PartyID,
+				Difficulty: c.Difficulty,
+				NewStatus:  status,
+			}
+
+			if err := s.SetContractStatus(ctx, update); err != nil {
+				errCh <- fmt.Errorf("Could not update contract status: %w", err)
+			}
+		}(c)
 
 	}
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
+}
+
+func (s *ContractService) EvaluateContract(ctx context.Context, contract database.GetExpiredContractsRow) (string, error) {
+	var successChance float64
+	party, err := s.store.GetPartyOnContract(ctx, database.UUIDToPgtype(contract.ContractID))
+	if err != nil {
+		return "", fmt.Errorf("Could not retrieve party details: %w", err)
+	}
+
+	adventurers, err := s.store.GetMemberDetails(ctx, database.UUIDToPgtype(party.ID))
+	if err != nil {
+		return "", fmt.Errorf("Could not retrieve party member details: %w", err)
+	}
+
+	if party.PartyRank >= contract.Difficulty {
+		successChance += 0.50
+	}
+
+	// Individual members — split remaining 50% across party
+	memberWeight := 0.50 / float64(len(adventurers))
+	for _, a := range adventurers {
+		delta := float64(a.CurrentRank) - float64(contract.Difficulty)
+		// normalize delta: clamp contribution per member between -1 and +1
+		normalized := math.Max(-1.0, math.Min(1.0, delta/5.0))
+		successChance += memberWeight * (1.0 + normalized) / 2.0
+	}
+
+	// Clamp final result to [0, 1]
+	successChance = math.Max(0.0, math.Min(1.0, successChance))
+
+	outcome := rand.Float64()
+	if outcome <= successChance {
+		return string(database.ContractStatusEnumComplete), nil
+	}
+	return string(database.ContractStatusEnumFailed), nil
 }
 
 func GetDifficultyString(difficulty int32) string {

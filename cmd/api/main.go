@@ -25,9 +25,12 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	bgCtx := context.Background()
 	dbURL := os.Getenv("DB_URL")
-	dbConn, err := pgxpool.New(ctx, dbURL)
+	dbConn, err := pgxpool.New(bgCtx, dbURL)
+	if err != nil {
+		log.Fatal("Database connection failed.")
+	}
 
 	store := database.NewStore(dbConn)
 	client := anthropic.NewClient(
@@ -61,30 +64,24 @@ func main() {
 	)
 
 	c.AddFunc("@every 4h", func() {
-		go func() {
-			app.Logger.Info("Starting Procedural Generation", "Type", "Adventurer")
-			if err := app.ProceduralService.GenerateAdventurer(ctx); err != nil {
-				app.Logger.Error("Adventurer Generation Failed", "Error", err)
-			}
-		}()
+		app.Logger.Info("Starting Procedural Generation", "Type", "Adventurer")
+		if err := app.ProceduralService.GenerateAdventurer(bgCtx); err != nil {
+			app.Logger.Error("Adventurer Generation Failed", "Error", err)
+		}
 	})
 
 	c.AddFunc("@every 1h30m", func() {
-		go func() {
-			app.Logger.Info("Starting Procedural Generation", "Type", "Contract")
-			if err := app.ProceduralService.GenerateContract(ctx); err != nil {
-				app.Logger.Error("Contract Generation Failed", "Error", err)
-			}
-		}()
+		app.Logger.Info("Starting Procedural Generation", "Type", "Contract")
+		if err := app.ProceduralService.GenerateContract(bgCtx); err != nil {
+			app.Logger.Error("Contract Generation Failed", "Error", err)
+		}
 	})
 
 	c.AddFunc("@every 1h", func() {
-		go func() {
-			app.Logger.Info("Checking expired contracts")
-			if err := app.ContractService.CheckExpiredContracts(ctx); err != nil {
-				app.Logger.Error("Contract Resolution Failed", "Error", err)
-			}
-		}()
+		app.Logger.Info("Checking expired contracts")
+		if err := app.ContractService.CheckExpiredContracts(bgCtx); err != nil {
+			app.Logger.Error("Contract Resolution Failed", "Error", err)
+		}
 	})
 
 	c.Start()

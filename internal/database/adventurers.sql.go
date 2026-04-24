@@ -144,16 +144,55 @@ func (q *Queries) GetAdventurerDetails(ctx context.Context, id uuid.UUID) (GetAd
 
 const getAdventurerUpkeepCost = `-- name: GetAdventurerUpkeepCost :one
 SELECT
+id,
 upkeep_cost
 FROM adventurers
 WHERE id = $1
 `
 
-func (q *Queries) GetAdventurerUpkeepCost(ctx context.Context, id uuid.UUID) (int32, error) {
+type GetAdventurerUpkeepCostRow struct {
+	ID         uuid.UUID `json:"id"`
+	UpkeepCost int32     `json:"upkeep_cost"`
+}
+
+func (q *Queries) GetAdventurerUpkeepCost(ctx context.Context, id uuid.UUID) (GetAdventurerUpkeepCostRow, error) {
 	row := q.db.QueryRow(ctx, getAdventurerUpkeepCost, id)
-	var upkeep_cost int32
-	err := row.Scan(&upkeep_cost)
-	return upkeep_cost, err
+	var i GetAdventurerUpkeepCostRow
+	err := row.Scan(&i.ID, &i.UpkeepCost)
+	return i, err
+}
+
+const getAllUpkeepCost = `-- name: GetAllUpkeepCost :many
+SELECT 
+id,
+upkeep_cost
+FROM adventurers
+WHERE guild_id = $1
+`
+
+type GetAllUpkeepCostRow struct {
+	ID         uuid.UUID `json:"id"`
+	UpkeepCost int32     `json:"upkeep_cost"`
+}
+
+func (q *Queries) GetAllUpkeepCost(ctx context.Context, guildID pgtype.UUID) ([]GetAllUpkeepCostRow, error) {
+	rows, err := q.db.Query(ctx, getAllUpkeepCost, guildID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllUpkeepCostRow
+	for rows.Next() {
+		var i GetAllUpkeepCostRow
+		if err := rows.Scan(&i.ID, &i.UpkeepCost); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getGuildMembers = `-- name: GetGuildMembers :many

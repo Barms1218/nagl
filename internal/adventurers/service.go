@@ -2,6 +2,7 @@ package adventurers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/google/uuid"
@@ -73,16 +74,33 @@ func (s *AdventurerService) GetAdventurerDetails(ctx context.Context, id uuid.UU
 }
 
 func (s *AdventurerService) HireAdventurer(ctx context.Context, r SetAdventurerHiredRequest) error {
-	params := database.SetAdventurerHiredParams{
-		GuildID: database.UUIDToPgtype(r.GuildID),
-		ID:      r.AdventurerID,
-	}
+	return s.store.ExecTX(ctx, func(q *database.Queries) error {
+		guild, err := s.store.GetGuildByID(ctx, r.GuildID)
+		if err != nil {
+			return fmt.Errorf("Could not get guild with that ID: %w", err)
+		}
 
-	if err := s.store.SetAdventurerHired(ctx, params); err != nil {
-		return err
-	}
+		cost, err := s.store.GetAdventurerUpkeepCost(ctx, r.AdventurerID)
+		if err != nil {
+			return fmt.Errorf("Could not get the adventurer with that ID: %w", err)
+		}
 
-	return nil
+		if guild.Treasury < cost.UpkeepCost {
+			return fmt.Errorf("Cannot afford that adventurer")
+		}
+
+		params := database.SetAdventurerHiredParams{
+			GuildID: database.UUIDToPgtype(r.GuildID),
+			ID:      r.AdventurerID,
+		}
+
+		if err := s.store.SetAdventurerHired(ctx, params); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 }
 
 func (s *AdventurerService) ListGuildMembers(ctx context.Context, guildID uuid.UUID, filters GuildMemberFilters) ([]ListMembersResponse, error) {
@@ -127,7 +145,8 @@ func (s *AdventurerService) ListGuildMembers(ctx context.Context, guildID uuid.U
 }
 
 func (s *AdventurerService) GetUpkeepCost(ctx context.Context, adventurerID uuid.UUID) (int32, error) {
-	return s.store.GetAdventurerUpkeepCost(ctx, adventurerID)
+	cost, err := s.store.GetAdventurerUpkeepCost(ctx, adventurerID)
+	return cost.UpkeepCost, err
 }
 
 func GetRankString(rank int) string {

@@ -152,3 +152,25 @@ func (s *GuildService) ChangeTreasuryAmount(ctx context.Context, request UpdateT
 	}
 	return s.store.UpdateTreasury(ctx, params)
 }
+
+func (s *GuildService) PayMembers(ctx context.Context, guildID uuid.UUID) error {
+	return s.store.ExecTX(ctx, func(q *database.Queries) error {
+		costs, err := s.store.GetAllUpkeepCost(ctx, database.UUIDToPgtype(guildID))
+		if err != nil {
+			return fmt.Errorf("Could not obtain list of guild members: %w", err)
+		}
+
+		costErrs := make([]error, len(costs))
+		for _, c := range costs {
+			if err := s.ChangeTreasuryAmount(ctx, UpdateTreasuryRequest{
+				c.ID,
+				c.UpkeepCost,
+			}); err != nil {
+				costErrs = append(costErrs, fmt.Errorf("Cannot afford to pay adventurer with id %v", c.ID))
+			}
+		}
+
+		return nil
+	})
+
+}

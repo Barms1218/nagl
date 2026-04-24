@@ -91,9 +91,17 @@ ORDER BY ach.occurred_at DESC;
 
 -- name: GetAdventurerUpkeepCost :one
 SELECT
+id,
 upkeep_cost
 FROM adventurers
 WHERE id = $1;
+
+-- name: GetAllUpkeepCost :many
+SELECT 
+id,
+upkeep_cost
+FROM adventurers
+WHERE guild_id = $1;
 
 -- name: UpsertAdventurer :one
 Insert INTO adventurers(name, current_rank, role, description)

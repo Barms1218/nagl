@@ -9,6 +9,7 @@ import (
 	"github.com/Barms1218/nagl/internal/contracts"
 	"github.com/Barms1218/nagl/internal/guild"
 	"github.com/Barms1218/nagl/internal/procedural"
+	"github.com/Barms1218/nagl/internal/workers"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -19,6 +20,7 @@ type App struct {
 	ProceduralService *procedural.ProceduralService
 	ContractService   *contracts.ContractService
 	AdventurerService *adventurers.AdventurerService
+	WorkerService     *workers.WorkerService
 	privateKey        *ecdsa.PrivateKey
 }
 
@@ -28,6 +30,7 @@ func NewApp(
 	ps *procedural.ProceduralService,
 	cs *contracts.ContractService,
 	as *adventurers.AdventurerService,
+	ws *workers.WorkerService,
 	pk *ecdsa.PrivateKey) *App {
 	return &App{
 		Logger:            logger,
@@ -35,6 +38,7 @@ func NewApp(
 		ProceduralService: ps,
 		ContractService:   cs,
 		AdventurerService: as,
+		WorkerService:     ws,
 		privateKey:        pk,
 	}
 }

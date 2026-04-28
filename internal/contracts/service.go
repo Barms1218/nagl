@@ -5,19 +5,23 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"math/rand/v2"
 	"sync"
 
 	"github.com/Barms1218/nagl/internal/database"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 type ContractService struct {
+	redis *redis.Client
 	store *database.Store
 }
 
-func NewContractService(s *database.Store) *ContractService {
-	return &ContractService{store: s}
+func NewContractService(r *redis.Client, s *database.Store) *ContractService {
+	return &ContractService{
+		redis: r,
+		store: s,
+	}
 }
 
 func (s *ContractService) ClaimContract(ctx context.Context, c ContractClaimRequest) error {
@@ -321,22 +325,19 @@ func (s *ContractService) CheckExpiredContracts(ctx context.Context) error {
 		wg.Add(1)
 		go func(database.GetExpiredContractsRow) {
 			defer wg.Done()
-			status, err := s.EvaluateContract(ctx, c)
+			s.redis.XAdd(ctx, &redis.XAddArgs{
+				Stream: "contracts:expired",
+				Values: map[string]any{
+					"contract_id": c.ContractID,
+					"guild_id":    c.GuildID,
+					"party_id":    c.PartyID,
+					"difficulty":  c.Difficulty,
+				},
+			}).Err()
 			if err != nil {
-				errCh <- fmt.Errorf("Could not evaluate :colo")
+				errCh <- fmt.Errorf("Failed to publish contract %s: %w", c.ContractID, err)
 			}
 
-			update := SetContractStatusRequest{
-				GuildID:    c.GuildID,
-				ContractID: c.ContractID,
-				PartyID:    c.PartyID,
-				Difficulty: c.Difficulty,
-				NewStatus:  status,
-			}
-
-			if err := s.SetContractStatus(ctx, update); err != nil {
-				errCh <- fmt.Errorf("Could not update contract status: %w", err)
-			}
 		}(c)
 
 	}
@@ -348,41 +349,6 @@ func (s *ContractService) CheckExpiredContracts(ctx context.Context) error {
 	}
 
 	return errors.Join(errs...)
-}
-
-func (s *ContractService) EvaluateContract(ctx context.Context, contract database.GetExpiredContractsRow) (string, error) {
-	var successChance float64
-	party, err := s.store.GetPartyOnContract(ctx, database.UUIDToPgtype(contract.ContractID))
-	if err != nil {
-		return "", fmt.Errorf("Could not retrieve party details: %w", err)
-	}
-
-	adventurers, err := s.store.GetMemberDetails(ctx, database.UUIDToPgtype(party.ID))
-	if err != nil {
-		return "", fmt.Errorf("Could not retrieve party member details: %w", err)
-	}
-
-	if party.PartyRank >= contract.Difficulty {
-		successChance += 0.50
-	}
-
-	// Individual members — split remaining 50% across party
-	memberWeight := 0.50 / float64(len(adventurers))
-	for _, a := range adventurers {
-		delta := float64(a.CurrentRank) - float64(contract.Difficulty)
-		// normalize delta: clamp contribution per member between -1 and +1
-		normalized := math.Max(-1.0, math.Min(1.0, delta/5.0))
-		successChance += memberWeight * (1.0 + normalized) / 2.0
-	}
-
-	// Clamp final result to [0, 1]
-	successChance = math.Max(0.0, math.Min(1.0, successChance))
-
-	outcome := rand.Float64()
-	if outcome <= successChance {
-		return string(database.ContractStatusEnumComplete), nil
-	}
-	return string(database.ContractStatusEnumFailed), nil
 }
 
 func GetDifficultyString(difficulty int32) string {

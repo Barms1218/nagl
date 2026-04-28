@@ -3,18 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/Barms1218/nagl/internal/adventurers"
-	"github.com/Barms1218/nagl/internal/app"
-	"github.com/Barms1218/nagl/internal/contracts"
-	"github.com/Barms1218/nagl/internal/database"
-	"github.com/Barms1218/nagl/internal/guild"
-	"github.com/Barms1218/nagl/internal/procedural"
-	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/anthropics/anthropic-sdk-go/option"
-	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/robfig/cron/v3"
 	"log"
 	"log/slog"
 	"net/http"
@@ -22,6 +10,21 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/Barms1218/nagl/internal/adventurers"
+	"github.com/Barms1218/nagl/internal/app"
+	"github.com/Barms1218/nagl/internal/contracts"
+	"github.com/Barms1218/nagl/internal/database"
+	"github.com/Barms1218/nagl/internal/guild"
+	"github.com/Barms1218/nagl/internal/procedural"
+	"github.com/Barms1218/nagl/internal/workers"
+	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/option"
+	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
+	"github.com/robfig/cron/v3"
 )
 
 func main() {
@@ -36,6 +39,10 @@ func main() {
 	client := anthropic.NewClient(
 		option.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
 	)
+	rdb := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_URL"),
+	})
+
 	keyBytes, err := os.ReadFile("ec_private.pem")
 	if err != nil {
 		log.Fatal(err)
@@ -50,9 +57,10 @@ func main() {
 	c := cron.New()
 	v := validator.New()
 	guilds := guild.NewGuildService(store, v, privateKey)
-	contracts := contracts.NewContractService(store)
+	contracts := contracts.NewContractService(rdb, store)
 	procedural := procedural.NewProceduralService(&client, store)
 	adventurers := adventurers.NewAdventurerService(store)
+	workers := workers.NewWorkerService(rdb, store, contracts)
 
 	app := app.NewApp(
 		logger,
@@ -60,6 +68,7 @@ func main() {
 		procedural,
 		contracts,
 		adventurers,
+		workers,
 		privateKey,
 	)
 
@@ -86,6 +95,19 @@ func main() {
 
 	c.Start()
 	r := app.Routes()
+
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	r.Get("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		if err := dbConn.Ping(r.Context()); err != nil {
+			logger.Error("Ready Check Failed", "Error", err)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
 
 	server := &http.Server{
 		Addr:    ":8080",

@@ -325,7 +325,7 @@ func (s *ContractService) CheckExpiredContracts(ctx context.Context) error {
 		wg.Add(1)
 		go func(database.GetExpiredContractsRow) {
 			defer wg.Done()
-			s.redis.XAdd(ctx, &redis.XAddArgs{
+			err := s.redis.XAdd(ctx, &redis.XAddArgs{
 				Stream: "contracts:expired",
 				Values: map[string]any{
 					"contract_id": c.ContractID,

@@ -60,7 +60,7 @@ func main() {
 	contracts := contracts.NewContractService(rdb, store)
 	procedural := procedural.NewProceduralService(&client, store)
 	adventurers := adventurers.NewAdventurerService(store)
-	workers := workers.NewWorkerService(rdb, store, contracts)
+	workers := workers.NewWorkerService(rdb, store, contracts, logger)
 
 	app := app.NewApp(
 		logger,
@@ -72,28 +72,6 @@ func main() {
 		privateKey,
 	)
 
-	c.AddFunc("@every 4h", func() {
-		app.Logger.Info("Starting Procedural Generation", "Type", "Adventurer")
-		if err := app.ProceduralService.GenerateAdventurer(bgCtx); err != nil {
-			app.Logger.Error("Adventurer Generation Failed", "Error", err)
-		}
-	})
-
-	c.AddFunc("@every 1h30m", func() {
-		app.Logger.Info("Starting Procedural Generation", "Type", "Contract")
-		if err := app.ProceduralService.GenerateContract(bgCtx); err != nil {
-			app.Logger.Error("Contract Generation Failed", "Error", err)
-		}
-	})
-
-	c.AddFunc("@every 1h", func() {
-		app.Logger.Info("Checking expired contracts")
-		if err := app.ContractService.CheckExpiredContracts(bgCtx); err != nil {
-			app.Logger.Error("Contract Resolution Failed", "Error", err)
-		}
-	})
-
-	c.Start()
 	r := app.Routes()
 
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -126,6 +104,32 @@ func main() {
 
 	<-ctx.Done()
 
+	if err := app.WorkerService.Start(ctx, 5); err != nil {
+		log.Fatal(err)
+	}
+
+	c.AddFunc("@every 4h", func() {
+		app.Logger.Info("Starting Procedural Generation", "Type", "Adventurer")
+		if err := app.ProceduralService.GenerateAdventurer(ctx); err != nil {
+			app.Logger.Error("Adventurer Generation Failed", "Error", err)
+		}
+	})
+
+	c.AddFunc("@every 1h30m", func() {
+		app.Logger.Info("Starting Procedural Generation", "Type", "Contract")
+		if err := app.ProceduralService.GenerateContract(ctx); err != nil {
+			app.Logger.Error("Contract Generation Failed", "Error", err)
+		}
+	})
+
+	c.AddFunc("@every 1h", func() {
+		app.Logger.Info("Checking expired contracts")
+		if err := app.ContractService.CheckExpiredContracts(ctx); err != nil {
+			app.Logger.Error("Contract Resolution Failed", "Error", err)
+		}
+	})
+
+	c.Start()
 	shuwdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 

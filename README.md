@@ -92,7 +92,7 @@
 
 **Manual DTO mapping** between database models and response types enforces strict separation of concerns and prevents accidental data leaks (e.g. password hashes) at the serialization boundary.
 
-**Anthropic SDK** drives procedural generation because creative writing is a genuine strength of the model. Each generated adventurer and contract is checked against existing records before insertion to avoid duplicates.
+**Anthropic SDK** drives procedural generation because creative writing is a genuine strength of the model. Each generated adventurer and contract is checked against existing records before insertion to avoid duplicates and a structured JSON response is returned..
 
 **Example prompt (adventurer generation):**
 
